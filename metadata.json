@@ -1,0 +1,10 @@
+{
+  "name": "Halal Product Verifier",
+  "description": "Analyze product photos (names, ingredients list, or barcodes) to verify if a product is Halal, Doubtful, or Haram based on official guidelines.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
