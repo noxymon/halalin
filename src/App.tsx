@@ -135,12 +135,28 @@ const DEMO_SAMPLES = [
 ];
 
 export default function App() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [customText, setCustomText] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState("");
-  const [result, setResult] = useState<VerificationResult | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  interface UploadedItem {
+    id: string;
+    name: string;
+    dataUrl: string;
+    result: VerificationResult | null;
+    isAnalyzing: boolean;
+    analysisProgress: string;
+    error: string | null;
+  }
+
+  const [uploadedImages, setUploadedImages] = useState<UploadedItem[]>([]);
+  const [activeImageId, setActiveImageId] = useState<string | null>(null);
+  const [generalError, setGeneralError] = useState<string | null>(null);
+
+  // Derive single-image compatible values to keep the remaining layout work unmodified
+  const activeItem = uploadedImages.find(item => item.id === activeImageId) || null;
+  const selectedImage = activeItem ? activeItem.dataUrl : null;
+  const result = activeItem ? activeItem.result : null;
+  const isAnalyzing = activeItem ? activeItem.isAnalyzing : false;
+  const analysisProgress = activeItem ? activeItem.analysisProgress : "";
+  const errorMsg = activeItem ? activeItem.error : generalError;
+
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isRatingLevelsOpen, setIsRatingLevelsOpen] = useState(false);
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
@@ -168,17 +184,22 @@ export default function App() {
   const dragRef = useRef<HTMLDivElement | null>(null);
   const analysisSessionRef = useRef<number>(0);
 
+  const updateItemState = (itemId: string | null, updates: Partial<UploadedItem>) => {
+    if (!itemId) return;
+    setUploadedImages(prev => prev.map(item => item.id === itemId ? { ...item, ...updates } : item));
+  };
+
   const stopAnalysis = () => {
     analysisSessionRef.current += 1;
-    setIsAnalyzing(false);
-    setAnalysisProgress("");
+    if (activeImageId) {
+      updateItemState(activeImageId, { isAnalyzing: false, analysisProgress: "" });
+    }
   };
 
   // Time stamp
   const [currentTime, setCurrentTime] = useState("2026-06-11 07:29:00 UTC");
 
   useEffect(() => {
-    // Tick to update current UTC time nicely
     const timer = setInterval(() => {
       const now = new Date();
       setCurrentTime(now.toUTCString().replace("GMT", "UTC"));
@@ -194,7 +215,6 @@ export default function App() {
     async function setupCamera() {
       if (isCameraActive) {
         try {
-          // Wait briefly to let DOM layout settle so videoRef.current is guaranteed initialized
           await new Promise(r => setTimeout(r, 80));
           if (!isActive) return;
 
@@ -217,7 +237,7 @@ export default function App() {
           }
         } catch (err: any) {
           console.error("Camera access failed:", err);
-          setErrorMsg("Could not request access to device camera. Check layout permissions in metadata and address browser security settings.");
+          setGeneralError("Could not request access to device camera. Check layout permissions in metadata.");
           setIsCameraActive(false);
         }
       } else {
@@ -239,12 +259,8 @@ export default function App() {
     };
   }, [isCameraActive]);
 
-  // Web camera handlers
   const startCamera = () => {
-    setResult(null);
-    setErrorMsg(null);
-    setSelectedImage(null);
-    setSelectedSampleId(null);
+    setGeneralError(null);
     setIsCameraActive(true);
   };
 
@@ -261,39 +277,69 @@ export default function App() {
       if (ctx) {
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL("image/jpeg");
-        setSelectedImage(dataUrl);
-        setSelectedSampleId(null);
+        
+        const itemId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const newItem: UploadedItem = {
+          id: itemId,
+          name: `Camera Capture (${new Date().toLocaleTimeString()})`,
+          dataUrl: dataUrl,
+          result: null,
+          isAnalyzing: true,
+          analysisProgress: "Preparing visual data...",
+          error: null
+        };
+        
+        setUploadedImages(prev => [...prev, newItem]);
+        setActiveImageId(itemId);
         stopCamera();
-        verifyHalalStatus(dataUrl);
+        verifyHalalStatus(dataUrl, itemId);
       }
     }
   };
 
-  // File drop and select handlers
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setErrorMsg(null);
-    const file = e.target.files?.[0];
-    if (file) {
-      processFile(file);
-    }
+  const processFiles = (files: FileList | File[]) => {
+    setGeneralError(null);
+    const list = Array.from(files);
+    
+    list.forEach((file, index) => {
+      if (!file.type.startsWith("image/")) {
+        setGeneralError("Please select a valid image file (PNG, JPG, or WEBP).");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const itemId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${index}`;
+        const newItem: UploadedItem = {
+          id: itemId,
+          name: file.name || `Uploaded image #${index + 1}`,
+          dataUrl: dataUrl,
+          result: null,
+          isAnalyzing: true,
+          analysisProgress: "Preparing package image...",
+          error: null
+        };
+        
+        setUploadedImages(prev => {
+          const updated = [...prev, newItem];
+          setActiveImageId(prevActive => prevActive || itemId);
+          return updated;
+        });
+
+        verifyHalalStatus(dataUrl, itemId);
+      };
+      reader.onerror = () => {
+        setGeneralError("Error reading the image file.");
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  const processFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setErrorMsg("Please select a valid image file (PNG, JPG, or WEBP).");
-      return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      processFiles(files);
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setSelectedImage(dataUrl);
-      setSelectedSampleId(null);
-      verifyHalalStatus(dataUrl);
-    };
-    reader.onerror = () => {
-      setErrorMsg("Error reading the image file.");
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -315,39 +361,67 @@ export default function App() {
     if (dragRef.current) {
       dragRef.current.classList.remove("border-emerald-500", "bg-emerald-50/50");
     }
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      processFile(file);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFiles(files);
     }
   };
 
-  // Run the Sample Demo immediate loader
   const handleSelectSample = (sample: typeof DEMO_SAMPLES[0]) => {
-    setSelectedImage(sample.image);
-    setSelectedSampleId(sample.id);
-    setResult(sample.result);
-    setErrorMsg(null);
+    setGeneralError(null);
+    const existing = uploadedImages.find(item => item.id === sample.id);
+    if (existing) {
+      setActiveImageId(sample.id);
+    } else {
+      const newItem: UploadedItem = {
+        id: sample.id,
+        name: sample.name,
+        dataUrl: sample.image,
+        result: sample.result,
+        isAnalyzing: false,
+        analysisProgress: "",
+        error: null
+      };
+      setUploadedImages(prev => [...prev, newItem]);
+      setActiveImageId(sample.id);
+    }
   };
 
-  // Trigger Gemini API Client analysis
-  const verifyHalalStatus = async (imageToAnalyze?: string) => {
+  const removeUploadedImage = (itemId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setUploadedImages(prev => {
+      const filtered = prev.filter(item => item.id !== itemId);
+      if (activeImageId === itemId) {
+        setActiveImageId(filtered.length > 0 ? filtered[0].id : null);
+      }
+      return filtered;
+    });
+  };
+
+  const clearAllUploadedImages = () => {
+    setUploadedImages([]);
+    setActiveImageId(null);
+    setGeneralError(null);
+  };
+
+  const verifyHalalStatus = async (imageToAnalyze?: string, targetItemId?: string) => {
+    const itemId = targetItemId || activeImageId;
+    if (!itemId) return;
+
     const finalApiKey = useCustomKey && customApiKey.trim() ? customApiKey.trim() : apiKey;
-    const imgData = imageToAnalyze || selectedImage;
+    const imgData = imageToAnalyze || uploadedImages.find(item => item.id === itemId)?.dataUrl;
     if (!imgData) {
-      setErrorMsg("Please provide a product image either by camera capture, file upload, or by choosing a demo sample.");
+      updateItemState(itemId, { error: "Please provide a product image.", isAnalyzing: false });
       return;
     }
 
-    setIsAnalyzing(true);
-    setResult(null);
-    setErrorMsg(null);
+    updateItemState(itemId, { isAnalyzing: true, result: null, error: null });
 
     analysisSessionRef.current += 1;
     const currentSession = analysisSessionRef.current;
 
-    // List of rotating analysis progress states to create visual polish
     const states = [
-      "Connecting to Gemini Flash 3.5 Client-side engine...",
+      "Connecting to Gemini Flash 3.1 Lite engine...",
       "Extracting text (OCR) from ingredients panel...",
       "Translating Japanese Kanji characters to English...",
       "Decoding food packaging additives & E-numbers...",
@@ -357,7 +431,7 @@ export default function App() {
     ];
 
     let stateIdx = 0;
-    setAnalysisProgress(states[0]);
+    updateItemState(itemId, { analysisProgress: states[0] });
     const progressTimer = setInterval(() => {
       if (analysisSessionRef.current !== currentSession) {
         clearInterval(progressTimer);
@@ -365,49 +439,48 @@ export default function App() {
       }
       if (stateIdx < states.length - 1) {
         stateIdx++;
-        setAnalysisProgress(states[stateIdx]);
+        updateItemState(itemId, { analysisProgress: states[stateIdx] });
       }
     }, 2000);
 
     try {
-      // If we don't have an API Key but selected a demo sample, use the precompiled mock result
       if (!finalApiKey) {
         console.warn("Gemini API key is not defined. Using local rulebook lookup.");
         setTimeout(() => {
           clearInterval(progressTimer);
           if (analysisSessionRef.current !== currentSession) return;
-          if (selectedSampleId) {
-            const match = DEMO_SAMPLES.find(s => s.id === selectedSampleId);
+          
+          if (itemId && (itemId === "sample1" || itemId === "sample2" || itemId === "sample3")) {
+            const match = DEMO_SAMPLES.find(s => s.id === itemId);
             if (match) {
-              setResult(match.result);
-              setIsAnalyzing(false);
+              updateItemState(itemId, { result: match.result, isAnalyzing: false });
               return;
             }
           }
-          // Default fallback mock response in case they uploaded a custom image without API Key
-          setResult({
-            productName: "Uploaded Product (Local Rulebook Scan)",
-            brand: "Unknown Brand",
-            barcode: "N/A",
-            halalLevel: "D",
-            halalLevelExplanation: "Tested locally without an active Gemini API connection. Sourcing analysis based on common Japanese additives database. Please check standard ingredients rulebook.",
-            detectedLanguage: "Auto-detected",
-            extractedIngredientsText: "Ing: flour, sugar, shortening, emulsifier, soy sauce.",
-            ingredientsAnalysis: [
-              { name: "Shortening", extractedName: "ショートニング", category: "Syubhat", halalStatus: "Doubtful. Often lard-derived in Japanese pastries." },
-              { name: "Soy Sauce", extractedName: "醤油", category: "Syubhat", halalStatus: "Doubtful. Trace alcohol remains unless labeled halal." }
-            ],
-            finalRecommendation: "Caution: Sourced shortening is doubtful. Please save a custom Gemini API Key in the top Settings panel to unlock full real-time AI analyzer capabilities!"
+          
+          updateItemState(itemId, {
+            result: {
+              productName: "Uploaded Product (Local Rulebook Scan)",
+              brand: "Unknown Brand",
+              barcode: "N/A",
+              halalLevel: "D",
+              halalLevelExplanation: "Tested locally without an active Gemini API connection. Sourcing analysis based on common Japanese additives database. Please check standard ingredients rulebook.",
+              detectedLanguage: "Auto-detected",
+              extractedIngredientsText: "Ing: flour, sugar, shortening, emulsifier, soy sauce.",
+              ingredientsAnalysis: [
+                { name: "Shortening", extractedName: "ショートニング", category: "Syubhat", halalStatus: "Doubtful. Often lard-derived in Japanese pastries." },
+                { name: "Soy Sauce", extractedName: "醤油", category: "Syubhat", halalStatus: "Doubtful. Trace alcohol remains unless labeled halal." }
+              ],
+              finalRecommendation: "Caution: Sourced shortening is doubtful. Please save a custom Gemini API Key in the top Settings panel to unlock full real-time AI analyzer capabilities!"
+            },
+            isAnalyzing: false
           });
-          setIsAnalyzing(false);
-        }, 4000);
+        }, 3500);
         return;
       }
 
-      // Prepare Direct Client-Side Gemini request with selected API key
       const activeAi = new GoogleGenAI({ apiKey: finalApiKey });
 
-      // Parse base64 from current image
       let base64Data = imgData;
       let mimeType = "image/jpeg";
       const matches = imgData.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
@@ -451,6 +524,7 @@ Your instructions:
    On product packaging (including Japanese ingredients and international listings), food additives can be listed as E-numbers (e.g., "E120", "E471") or as raw numbers without any "E" prefix (e.g., "120", "471"). Both notations are completely symmetric and identical.
    They refer to the exact same substance listed in the reference catalog and are classified under the same category of Halal/Haram/Syubhat status.
    Map any raw numbers found in the ingredients text (like "471" or "322") directly to their matching E-number representation in the catalog (like "E471" or "E322") and vice versa.
+6. GOOGLE SEARCH GROUNDING: Use Google Search Grounding to cross-examine and look up details about this Japanese product or its ingredients, brand manufacturer declarations, or recent inquiries regarding its Halal certification status. Verify online if the specific food brand or product ingredients panel contains non-halal derivatives. Use these search results to provide highly precise and factual explanations.
 
 Reference catalog of ingredients and additives to use (derived from Numbers_With_No_E_Prefix.pdf and E_Numbers_With_E_Prefix.pdf):
 ${JSON.stringify(ingredientReference, null, 2)}
@@ -488,15 +562,16 @@ Provide your analysis in clean JSON.
       };
 
       const resultCall = await activeAi.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.1-flash-lite",
         contents: [
           imagePart,
-          { text: promptText + (customText ? `\nUser's supplementary notes or instructions: ${customText}` : "") }
+          { text: promptText }
         ],
         config: {
           responseMimeType: "application/json",
           responseSchema: schema,
-          temperature: 0.1
+          temperature: 0.1,
+          tools: [{ googleSearch: {} }]
         }
       });
 
@@ -508,21 +583,30 @@ Provide your analysis in clean JSON.
       }
 
       const parsedJSON: VerificationResult = JSON.parse(cleanedText);
-      setResult(parsedJSON);
+      updateItemState(itemId, { result: parsedJSON, isAnalyzing: false });
     } catch (err: any) {
       if (analysisSessionRef.current !== currentSession) return;
       console.error("Gemini runtime error:", err);
-      setErrorMsg(err.message || "An unexpected error occurred during direct client-side analysis. Ensure your internet and API Key configurations are active.");
+      updateItemState(itemId, { 
+        error: err.message || "An unexpected error occurred during direct client-side analysis. Ensure your internet and API Key configurations are active.", 
+        isAnalyzing: false 
+      });
     } finally {
       clearInterval(progressTimer);
-      if (analysisSessionRef.current === currentSession) {
-        setIsAnalyzing(false);
-      }
     }
   };
 
   return (
     <div id="halal-pro-app" className="min-h-screen bg-slate-50 flex flex-col font-sans text-stone-800 selection:bg-emerald-100 dark:bg-stone-950 dark:text-stone-100">
+      
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        multiple
+        className="hidden" 
+      />
       
       {/* 16-height top Header matching "Professional Polish" layout - Hidden when camera or selectedImage is active */}
       {!isCameraActive && !selectedImage && (
@@ -687,6 +771,97 @@ Provide your analysis in clean JSON.
               </span>
             </div>
 
+            {/* Scrollable Batch Gallery Row */}
+            {uploadedImages.length > 0 && (
+              <div className="px-5 py-3 border-b border-slate-150 bg-slate-100/40 dark:border-stone-850 dark:bg-stone-900/40">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-stone-400">
+                    Scan Batch ({uploadedImages.length} {uploadedImages.length === 1 ? "item" : "items"})
+                  </span>
+                  <button 
+                    onClick={clearAllUploadedImages}
+                    className="text-[10px] font-bold text-red-500 hover:text-red-700 hover:underline dark:text-red-400 dark:hover:text-red-350 transition-all cursor-pointer"
+                  >
+                    Clear Batch
+                  </button>
+                </div>
+                
+                <div className="flex items-center gap-3 overflow-x-auto pb-1 select-none">
+                  {uploadedImages.map((item) => {
+                    const isActive = item.id === activeImageId;
+                    const level = item.result?.halalLevel;
+                    let badgeColor = "bg-stone-550 border-stone-600 text-white";
+                    let label = "Pending";
+                    
+                    if (item.isAnalyzing) {
+                      badgeColor = "bg-sky-500 animate-pulse text-white";
+                      label = "Scanning";
+                    } else if (item.error) {
+                      badgeColor = "bg-amber-500 text-amber-950 font-bold";
+                      label = "Error";
+                    } else if (level) {
+                      if (["H1", "H2", "H3"].includes(level)) {
+                        badgeColor = "bg-emerald-600 text-white";
+                        label = level;
+                      } else if (level === "D") {
+                        badgeColor = "bg-amber-500 text-white";
+                        label = "Doubt";
+                      } else {
+                        badgeColor = "bg-red-650 text-white";
+                        label = "Haram";
+                      }
+                    }
+                    
+                    return (
+                      <div 
+                        key={item.id}
+                        onClick={() => { setActiveImageId(item.id); stopCamera(); }}
+                        className={`relative flex-shrink-0 w-16 h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${
+                          isActive 
+                            ? "border-emerald-600 shadow-md ring-2 ring-emerald-500/20 scale-105" 
+                            : "border-slate-200 hover:border-slate-400 dark:border-stone-800 dark:hover:border-stone-750"
+                        }`}
+                      >
+                        {/* Image preview */}
+                        <img 
+                          src={item.dataUrl} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                        
+                        {/* Status banner */}
+                        <div className={`absolute bottom-0 inset-x-0 py-0.5 text-[8px] font-black text-center truncate ${badgeColor}`}>
+                          {label}
+                        </div>
+
+                        {/* Quick remove button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeUploadedImage(item.id);
+                          }}
+                          className="absolute top-1 right-1 h-4 w-4 bg-black/60 hover:bg-red-600 rounded-full text-white flex items-center justify-center transition-all cursor-pointer"
+                          title="Remove item"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  {/* Add item inside row */}
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-shrink-0 w-16 h-20 rounded-xl border border-dashed border-slate-350 hover:border-slate-450 dark:border-stone-750 dark:hover:border-stone-650 bg-slate-50 hover:bg-slate-100 dark:bg-stone-900 dark:hover:bg-stone-850 flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 dark:text-stone-500 dark:hover:text-stone-300 gap-1 cursor-pointer transition-all"
+                    title="Upload more"
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span className="text-[8px] font-black uppercase tracking-wider">Add</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Main Interactive Stage Box */}
             <div 
               id="interactive-stage"
@@ -696,13 +871,6 @@ Provide your analysis in clean JSON.
               onDrop={handleDrop}
               className="flex-1 bg-stone-900 min-h-[350px] relative flex flex-col items-center justify-center p-5 transition-all duration-300"
             >
-              <input 
-                type="file" 
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*"
-                className="hidden" 
-              />
 
               {/* State 1: Live Web camera stream */}
               {isCameraActive && !selectedImage && (
@@ -747,13 +915,12 @@ Provide your analysis in clean JSON.
                   
                   {!isAnalyzing && (
                     <button 
-                      onClick={() => { 
-                        setSelectedImage(null); 
-                        setResult(null); 
-                        setSelectedSampleId(null); 
-                        setErrorMsg(null); 
+                      onClick={(e) => { 
+                        if (activeImageId) {
+                          removeUploadedImage(activeImageId, e);
+                        }
                       }}
-                      className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-600 rounded-full text-white transition-colors shadow"
+                      className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-650 rounded-full text-white transition-colors shadow cursor-pointer"
                       title="Remove image"
                     >
                       <X className="h-4.5 w-4.5" />
@@ -829,7 +996,7 @@ Provide your analysis in clean JSON.
                 {isAnalyzing ? (
                   <button 
                     onClick={stopAnalysis}
-                    className="w-full flex items-center justify-center space-x-2 py-2.5 bg-red-50 border border-red-200 text-red-605 hover:bg-red-100 rounded-lg text-xs font-bold transition-all dark:bg-red-950/20 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-950/40"
+                    className="w-full flex items-center justify-center space-x-2 py-2.5 bg-red-50 border border-red-200 text-red-650 hover:bg-red-100 rounded-lg text-xs font-bold transition-all dark:bg-red-950/20 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-950/40"
                   >
                     <X className="h-3.5 w-3.5 animate-pulse" />
                     <span>Stop Analyze</span>
@@ -837,15 +1004,13 @@ Provide your analysis in clean JSON.
                 ) : (
                   <button 
                     onClick={() => {
-                      setSelectedImage(null);
-                      setResult(null);
-                      setSelectedSampleId(null);
-                      setErrorMsg(null);
-                      stopCamera();
+                      if (activeImageId) {
+                        removeUploadedImage(activeImageId);
+                      }
                     }}
                     className="w-full flex items-center justify-center space-x-2 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all dark:bg-stone-800 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-750"
                   >
-                    <span>Clear Photo</span>
+                    <span>Remove Selected Image</span>
                   </button>
                 )}
               </div>
@@ -857,6 +1022,46 @@ Provide your analysis in clean JSON.
 
         {/* Right Column: Scan results container */}
         <div className="lg:col-span-7 flex flex-col space-y-6">
+
+          {/* Consolidated Batch Scanning Summary */}
+          {uploadedImages.length > 1 && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm dark:bg-stone-900 dark:border-stone-800 animate-fade-in">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest dark:text-stone-500">
+                  Batch Scan Analysis Status ({uploadedImages.length} Images in Batch)
+                </h3>
+                <span className="text-[8px] bg-slate-100 dark:bg-stone-820 text-slate-600 dark:text-stone-300 px-2 py-0.5 rounded font-bold uppercase">
+                  Consolidated Summary
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2.5 text-center">
+                <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-2.5 dark:bg-emerald-950/20 dark:border-emerald-900/40">
+                  <span className="text-sm text-emerald-800 dark:text-emerald-300 font-extrabold block">
+                    {uploadedImages.filter(img => img.result && ["H1", "H2", "H3"].includes(img.result.halalLevel)).length}
+                  </span>
+                  <span className="text-[8px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                    Permitted (H1-H3)
+                  </span>
+                </div>
+                <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-2.5 dark:bg-amber-950/20 dark:border-amber-900/40">
+                  <span className="text-sm text-amber-800 dark:text-amber-300 font-extrabold block">
+                    {uploadedImages.filter(img => img.result?.halalLevel === "D").length}
+                  </span>
+                  <span className="text-[8px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                    Doubtful (D)
+                  </span>
+                </div>
+                <div className="bg-red-50/50 border border-red-100 rounded-xl p-2.5 dark:bg-red-950/20 dark:border-red-900/40">
+                  <span className="text-sm text-red-800 dark:text-red-300 font-extrabold block">
+                    {uploadedImages.filter(img => img.result && ["HR1", "HR2"].includes(img.result.halalLevel)).length}
+                  </span>
+                  <span className="text-[8px] font-extrabold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                    Haram / Caution (HR)
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Missing API Key notice to serve as warning & guidelines helper */}
           {!apiKey && (
