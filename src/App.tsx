@@ -560,91 +560,67 @@ Provide your analysis in clean JSON.
           </button>
 
           <div className="hidden md:flex items-center space-x-6 text-xs text-slate-500 font-medium dark:text-stone-400">
-            <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-[11px] font-semibold border border-slate-200 flex items-center gap-1.5 dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-              Serverless Client Mode (No Webserver)
-            </span>
             <span className="flex items-center gap-1 text-slate-400"><Clock className="h-3 w-3" /> {currentTime}</span>
           </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+      <main className={`flex-1 ${isCameraActive && !selectedImage ? "p-2 sm:p-4" : "p-4 sm:p-8"} max-w-7xl w-full mx-auto overflow-y-auto`}>
         
         {/* OCR VERIFIER WORKFLOW */}
         <div className="w-full">
             
             {/* SUB-FLOW 1: DEDICATED REAL-TIME CAMERA SCANNER VIEW */}
             {isCameraActive && !selectedImage && (
-              <div className="max-w-xl mx-auto w-full py-2">
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg dark:bg-stone-900 dark:border-stone-800 overflow-hidden">
-                  
-                  {/* Camera Header Row */}
-                  <div className="flex items-center justify-between pb-3.5 border-b border-slate-150 mb-4 dark:border-stone-800">
-                    <div className="flex items-center gap-2">
-                      <Camera className="h-5 w-5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-                      <span className="font-extrabold text-sm text-slate-800 dark:text-white">Active Camera Scanner</span>
-                    </div>
-                    <button 
-                      onClick={stopCamera}
-                      className="text-slate-500 hover:text-slate-850 flex items-center gap-1 py-1 px-2.5 bg-slate-50 hover:bg-slate-100 text-[11px] font-bold rounded-lg transition-all dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-750 cursor-pointer"
-                    >
-                      <ArrowLeft className="h-3 w-3" /> 
-                      <span>Cancel Scan</span>
-                    </button>
-                  </div>
+              <div className="max-w-6xl mx-auto w-full py-0">
+                {/* Realtime Video Feed Canvas Frame */}
+                <div className="relative w-full aspect-[4/3] sm:aspect-video min-h-[580px] md:min-h-[calc(100vh-150px)] rounded-3xl overflow-hidden border border-slate-200 dark:border-stone-800 bg-black shadow-2xl">
+                  <video 
+                    ref={videoRef}
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
 
-                  {/* Realtime Video Feed Canvas Frame */}
-                  <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border border-stone-800 bg-black shadow-inner">
-                    <video 
-                      ref={videoRef}
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover"
-                    />
+                  {/* Absolute Top-Right Close/Cancel button */}
+                  <button 
+                    onClick={stopCamera}
+                    className="absolute top-4 right-4 z-20 bg-black/60 hover:bg-black/80 text-white rounded-full p-2.5 transition-all cursor-pointer border border-white/10 shadow-lg"
+                    title="Cancel Scan"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
 
-                    {/* Highly Professional Overlay Sight Guidelines Target */}
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
-                      <div className="relative w-full h-full border-2 border-dashed border-emerald-500/40 rounded-xl">
-                        {/* 4 Glowing Corner Angles for Targeting Alignment */}
-                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-500 -mt-1 -ml-1"></div>
-                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-500 -mt-1 -mr-1"></div>
-                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-500 -mb-1 -ml-1"></div>
-                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-500 -mb-1 -mr-1"></div>
+                  {/* Highly Professional Overlay Sight Guidelines Target */}
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-8">
+                    <div className="relative w-full h-full max-w-2xl max-h-[80%] border-2 border-dashed border-emerald-500/40 rounded-xl">
+                      {/* 4 Glowing Corner Angles for Targeting Alignment */}
+                      <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-500 -mt-1 -ml-1"></div>
+                      <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-500 -mt-1 -mr-1"></div>
+                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-500 -mb-1 -ml-1"></div>
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-500 -mb-1 -mr-1"></div>
 
-                        {/* Scrolling Green OCR Laser Scan Line */}
-                        <div className="absolute inset-x-0 h-0.5 bg-emerald-400 shadow-[0_0_15px_#10b981] animate-[scan_2s_ease-in-out_infinite]"></div>
-                      </div>
-                    </div>
-
-                    <div className="absolute top-3 left-3 bg-black/60 px-2.5 py-1 rounded text-[10px] text-emerald-450 font-bold tracking-wide uppercase flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                      <span>Live Camera Feed</span>
+                      {/* Scrolling Green OCR Laser Scan Line */}
+                      <div className="absolute inset-x-0 h-0.5 bg-emerald-400 shadow-[0_0_15px_#10b981] animate-[scan_2s_ease-in-out_infinite]"></div>
                     </div>
                   </div>
 
-                  {/* Instructions Guide */}
-                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-4 text-center leading-relaxed max-w-sm mx-auto">
-                    Align your product's Japanese or English ingredients text panel inside the targeting scope and snap a capture.
-                  </p>
-
-                  {/* Trigger Call to Actions */}
-                  <div className="mt-5 flex items-center justify-center gap-3">
+                  {/* Floating Action Capture Button directly in lower-middle inside the camera scanner visual */}
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
                     <button 
                       onClick={capturePhoto}
-                      className="px-6 py-3 bg-emerald-600 hover:bg-emerald-550 text-white rounded-full text-xs font-extrabold flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer"
+                      className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-555 active:scale-95 text-white rounded-full text-xs font-black tracking-wider shadow-2xl flex items-center justify-center gap-2.5 transition-all cursor-pointer border border-emerald-500/30"
                     >
-                      <Camera className="h-4.5 w-4.5" /> Capture & Verify
-                    </button>
-                    <button 
-                      onClick={stopCamera}
-                      className="px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-stone-800 dark:hover:bg-stone-750 text-stone-700 dark:text-stone-300 rounded-full text-xs font-bold transition-all cursor-pointer"
-                    >
-                      Cancel
+                      <Camera className="h-4.5 w-4.5" />
+                      <span>Capture & Verify</span>
                     </button>
                   </div>
 
+                  <div className="absolute top-4 left-4 bg-black/60 px-2.5 py-1 rounded text-[10px] text-emerald-450 font-bold tracking-wide uppercase flex items-center gap-1.5 border border-white/5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    <span>Live Camera Feed</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -688,27 +664,7 @@ Provide your analysis in clean JSON.
 
                 </div>
 
-                {/* Instant trial template presets collapsed drawer */}
-                <div id="quick-preset-shortcuts" className="mt-10 pt-6 border-t border-slate-200 dark:border-stone-850 w-full max-w-sm mx-auto">
-                  <span className="text-[9px] text-slate-400 dark:text-stone-550 uppercase tracking-widest font-black block mb-3">
-                    Or instantly test with presets
-                  </span>
-                  <div className="flex justify-center gap-2 flex-wrap">
-                    {DEMO_SAMPLES.map(sample => (
-                      <button 
-                        key={sample.id}
-                        onClick={() => {
-                          handleSelectSample(sample);
-                        }}
-                        className="text-[10px] bg-white border border-slate-200 hover:bg-slate-50 text-slate-750 px-3 py-1.5 rounded-xl font-bold dark:bg-stone-900 dark:border-stone-800 dark:text-stone-300 dark:hover:bg-stone-850 transition-all shadow-sm flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>{sample.id === "sample1" ? "🍓" : sample.id === "sample2" ? "🍵" : "🍛"}</span>
-                        <span>{sample.name.split(" ")[0]} ({sample.badge.split(" ")[0]})</span>
-                        <ChevronRight className="h-2.5 w-2.5 opacity-55 text-slate-400" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
+
 
               </div>
             )}
@@ -1164,20 +1120,7 @@ Provide your analysis in clean JSON.
   </div>
 </main>
 
-      {/* Status Bar Footer matching "Professional Polish" layout */}
-      <footer className="h-10 bg-slate-100 border-t border-slate-200 px-4 sm:px-6 flex items-center justify-between text-[10px] text-slate-500 font-medium flex-shrink-0 dark:bg-stone-900 dark:border-stone-800 dark:text-stone-400">
-        <div className="flex items-center space-x-4">
-          <span className="flex items-center">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Database Online
-          </span>
-          <span className="flex items-center">
-            <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span> Client AI Active
-          </span>
-        </div>
-        <div className="flex space-x-4">
-          <span>Rules updated: 2026-06-11</span>
-        </div>
-      </footer>
+      {/* Removed Footer Info */}
 
       {/* Settings Modal overlay */}
       {isSettingsOpen && (

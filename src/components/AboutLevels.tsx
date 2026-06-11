@@ -105,9 +105,19 @@ export default function AboutLevels() {
         ))}
       </div>
 
-      <div className="bg-stone-50 dark:bg-stone-900 border border-stone-100 dark:border-stone-800 p-3 rounded-xl text-xs text-stone-500 dark:text-stone-400 mt-4 leading-relaxed">
-        <strong className="text-stone-700 dark:text-stone-300 block mb-1">💡 Scan Disclaimer</strong>
-        Our verification matches the product components instantly based on OCR, visual search and Japanese-to-English translation mapping. However, please inspect physical package seals or consult local certified imams if you see inconsistencies.
+      <div className="bg-stone-50 dark:bg-stone-900 border border-stone-100 dark:border-stone-800 p-4 rounded-xl text-xs text-stone-500 dark:text-stone-400 mt-4 space-y-3 leading-relaxed">
+        <div>
+          <strong className="text-stone-700 dark:text-stone-300 block mb-1">🤖 AI-Powered Analysis</strong>
+          Product detection, Japanese OCR extraction, translation, and final safety categorizations are fully analyzed by our integrated AI models. Always inspect the physical label packaging as a human failsafe.
+        </div>
+        <div className="border-t border-stone-100 dark:border-stone-800 pt-3">
+          <strong className="text-stone-700 dark:text-stone-300 block mb-1">🔗 Reference Sources & Leveling</strong>
+          The Halal Leveling criteria (H1-H3, Doubtful, HR1-HR2) implemented in this application are referenced from and based on the standard guidelines outlined in the <a href="https://www.halalinjapan.com/blog/halal-japan-mobile-app" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline dark:text-emerald-400 font-semibold inline-flex items-center gap-0.5">Halal In Japan Mobile Guide</a> page.
+        </div>
+        <div className="border-t border-stone-100 dark:border-stone-800 pt-3">
+          <strong className="text-stone-700 dark:text-stone-300 block mb-1">🕌 Religious Consultation Disclaimer</strong>
+          This application serves solely as an early, fast-check reference tool and does <strong>not replace official fatwas issued by qualified Islamic scholars (Ulama)</strong>. To obtain a definitive and religiously justifiable ruling on any questionable ingredients, we strongly encourage you to consult a nearby Imam or your local Muslim community authority.
+        </div>
       </div>
     </div>
   );
