@@ -142,6 +142,13 @@ export default function App() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const dragRef = useRef<HTMLDivElement | null>(null);
+  const analysisSessionRef = useRef<number>(0);
+
+  const stopAnalysis = () => {
+    analysisSessionRef.current += 1;
+    setIsAnalyzing(false);
+    setAnalysisProgress("");
+  };
 
   // Time stamp
   const [currentTime, setCurrentTime] = useState("2026-06-11 07:29:00 UTC");
@@ -205,7 +212,7 @@ export default function App() {
         setSelectedImage(dataUrl);
         setSelectedSampleId(null);
         stopCamera();
-        // Automatically switch view to verify
+        verifyHalalStatus(dataUrl);
       }
     }
   };
@@ -230,8 +237,10 @@ export default function App() {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      setSelectedImage(reader.result as string);
+      const dataUrl = reader.result as string;
+      setSelectedImage(dataUrl);
       setSelectedSampleId(null);
+      verifyHalalStatus(dataUrl);
     };
     reader.onerror = () => {
       setErrorMsg("Error reading the image file.");
@@ -273,8 +282,9 @@ export default function App() {
   };
 
   // Trigger Gemini API Client analysis
-  const verifyHalalStatus = async () => {
-    if (!selectedImage) {
+  const verifyHalalStatus = async (imageToAnalyze?: string) => {
+    const imgData = imageToAnalyze || selectedImage;
+    if (!imgData) {
       setErrorMsg("Please provide a product image either by camera capture, file upload, or by choosing a demo sample.");
       return;
     }
@@ -282,6 +292,9 @@ export default function App() {
     setIsAnalyzing(true);
     setResult(null);
     setErrorMsg(null);
+
+    analysisSessionRef.current += 1;
+    const currentSession = analysisSessionRef.current;
 
     // List of rotating analysis progress states to create visual polish
     const states = [
@@ -297,6 +310,10 @@ export default function App() {
     let stateIdx = 0;
     setAnalysisProgress(states[0]);
     const progressTimer = setInterval(() => {
+      if (analysisSessionRef.current !== currentSession) {
+        clearInterval(progressTimer);
+        return;
+      }
       if (stateIdx < states.length - 1) {
         stateIdx++;
         setAnalysisProgress(states[stateIdx]);
@@ -309,6 +326,7 @@ export default function App() {
         console.warn("GEMINI_API_KEY is not defined. Using high-fidelity local catalog lookup.");
         setTimeout(() => {
           clearInterval(progressTimer);
+          if (analysisSessionRef.current !== currentSession) return;
           if (selectedSampleId) {
             const match = DEMO_SAMPLES.find(s => s.id === selectedSampleId);
             if (match) {
@@ -343,9 +361,9 @@ export default function App() {
       }
 
       // Parse base64 from current image
-      let base64Data = selectedImage;
+      let base64Data = imgData;
       let mimeType = "image/jpeg";
-      const matches = selectedImage.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+      const matches = imgData.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
       if (matches && matches.length === 3) {
         mimeType = matches[1];
         base64Data = matches[2];
@@ -436,6 +454,7 @@ Provide your analysis in clean JSON.
       });
 
       clearInterval(progressTimer);
+      if (analysisSessionRef.current !== currentSession) return;
       const cleanedText = resultCall.text ? resultCall.text.trim() : "";
       if (!cleanedText) {
         throw new Error("Empty feedback from Gemini model. Try uploading a clearer picture.");
@@ -444,11 +463,14 @@ Provide your analysis in clean JSON.
       const parsedJSON: VerificationResult = JSON.parse(cleanedText);
       setResult(parsedJSON);
     } catch (err: any) {
+      if (analysisSessionRef.current !== currentSession) return;
       console.error("Gemini runtime error:", err);
       setErrorMsg(err.message || "An unexpected error occurred during direct client-side analysis. Ensure your internet and API Key configurations are active.");
     } finally {
       clearInterval(progressTimer);
-      setIsAnalyzing(false);
+      if (analysisSessionRef.current === currentSession) {
+        setIsAnalyzing(false);
+      }
     }
   };
 
@@ -577,18 +599,20 @@ Provide your analysis in clean JSON.
                   {/* Glowing Green Laser Scanner Line */}
                   <div className="absolute inset-x-0 h-0.5 bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_12px_#10b981] animate-[scan_2.5s_ease-in-out_infinite]"></div>
                   
-                  <button 
-                    onClick={() => { 
-                      setSelectedImage(null); 
-                      setResult(null); 
-                      setSelectedSampleId(null); 
-                      setErrorMsg(null); 
-                    }}
-                    className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-600 rounded-full text-white transition-colors shadow"
-                    title="Remove image"
-                  >
-                    <X className="h-4.5 w-4.5" />
-                  </button>
+                  {!isAnalyzing && (
+                    <button 
+                      onClick={() => { 
+                        setSelectedImage(null); 
+                        setResult(null); 
+                        setSelectedSampleId(null); 
+                        setErrorMsg(null); 
+                      }}
+                      className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-red-600 rounded-full text-white transition-colors shadow"
+                      title="Remove image"
+                    >
+                      <X className="h-4.5 w-4.5" />
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -668,37 +692,32 @@ Provide your analysis in clean JSON.
             </div>
 
             {/* Action buttons matching Design draft */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-3 dark:bg-stone-850 dark:border-stone-800">
-              <button 
-                onClick={() => {
-                  setSelectedImage(null);
-                  setResult(null);
-                  setSelectedSampleId(null);
-                  setErrorMsg(null);
-                  stopCamera();
-                }}
-                className="flex items-center justify-center space-x-2 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all dark:bg-stone-800 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-750"
-              >
-                <span>Clear Photo</span>
-              </button>
-              <button 
-                onClick={verifyHalalStatus}
-                disabled={isAnalyzing || !selectedImage}
-                className={`flex items-center justify-center space-x-2 py-2.5 rounded-lg text-xs font-bold text-white shadow-md transition-all ${
-                  selectedImage && !isAnalyzing 
-                    ? "bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] cursor-pointer" 
-                    : "bg-slate-300 cursor-not-allowed dark:bg-stone-800 dark:text-stone-500"
-                }`}
-              >
+            {selectedImage && (
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex dark:bg-stone-850 dark:border-stone-800">
                 {isAnalyzing ? (
-                  <span className="flex items-center gap-1.5">
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Analyzing...
-                  </span>
+                  <button 
+                    onClick={stopAnalysis}
+                    className="w-full flex items-center justify-center space-x-2 py-2.5 bg-red-50 border border-red-200 text-red-605 hover:bg-red-100 rounded-lg text-xs font-bold transition-all dark:bg-red-950/20 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-950/40"
+                  >
+                    <X className="h-3.5 w-3.5 animate-pulse" />
+                    <span>Stop Analyze</span>
+                  </button>
                 ) : (
-                  <span>Verify Halal Now</span>
+                  <button 
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setResult(null);
+                      setSelectedSampleId(null);
+                      setErrorMsg(null);
+                      stopCamera();
+                    }}
+                    className="w-full flex items-center justify-center space-x-2 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all dark:bg-stone-800 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-750"
+                  >
+                    <span>Clear Photo</span>
+                  </button>
                 )}
-              </button>
-            </div>
+              </div>
+            )}
           </section>
 
           {/* Local dictionary search widget box */}
