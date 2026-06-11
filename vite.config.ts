@@ -8,6 +8,7 @@ dotenv.config();
 
 export default defineConfig(() => {
   return {
+    base: process.env.GITHUB_ACTIONS === 'true' ? './' : '/',
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || ''),
       'process.env.APP_URL': JSON.stringify(process.env.APP_URL || ''),

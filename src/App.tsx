@@ -27,7 +27,7 @@ import { ALL_INGREDIENTS, HARAM_KANJI_LIST, SYUBHAT_INGREDIENTS } from "./data/h
 import { GoogleGenAI, Type } from "@google/genai";
 
 // Initialize Gemini Client
-const apiKey = process.env.GEMINI_API_KEY || "";
+const apiKey = ((import.meta as any).env?.VITE_GEMINI_API_KEY as string) || (typeof process !== "undefined" ? process.env.GEMINI_API_KEY : "") || "";
 let ai: GoogleGenAI | null = null;
 if (apiKey) {
   ai = new GoogleGenAI({
