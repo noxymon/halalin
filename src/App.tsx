@@ -601,7 +601,7 @@ Provide your analysis in clean JSON.
                       ref={videoRef}
                       playsInline
                       muted
-                      className="w-full h-full object-cover scale-x-[-1]"
+                      className="w-full h-full object-cover"
                     />
 
                     {/* Highly Professional Overlay Sight Guidelines Target */}
