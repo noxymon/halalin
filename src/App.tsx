@@ -23,7 +23,9 @@ import {
   Settings,
   Key,
   Eye,
-  EyeOff
+  EyeOff,
+  ArrowLeft,
+  ChevronRight
 } from "lucide-react";
 import { motion } from "motion/react";
 import AboutLevels from "./components/AboutLevels";
@@ -133,6 +135,7 @@ const DEMO_SAMPLES = [
 ];
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState<"scan" | "levels" | "dictionary">("scan");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [customText, setCustomText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -184,41 +187,69 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Web camera handlers
-  const startCamera = async () => {
-    setResult(null);
-    setErrorMsg(null);
-    try {
-      if (videoRef.current) {
-        // Stop any old stream first
-        const currentStream = videoRef.current.srcObject as MediaStream;
-        if (currentStream) {
-          currentStream.getTracks().forEach(t => t.stop());
+  // Declarative camera streaming trigger
+  useEffect(() => {
+    let activeStream: MediaStream | null = null;
+    let isActive = true;
+
+    async function setupCamera() {
+      if (isCameraActive) {
+        try {
+          // Wait briefly to let DOM layout settle so videoRef.current is guaranteed initialized
+          await new Promise(r => setTimeout(r, 80));
+          if (!isActive) return;
+
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+            audio: false
+          });
+
+          if (!isActive) {
+            stream.getTracks().forEach(t => t.stop());
+            return;
+          }
+
+          activeStream = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play().catch(err => {
+              console.warn("Video autostart suspended, retrying active play:", err);
+            });
+          }
+        } catch (err: any) {
+          console.error("Camera access failed:", err);
+          setErrorMsg("Could not request access to device camera. Check layout permissions in metadata and address browser security settings.");
+          setIsCameraActive(false);
+        }
+      } else {
+        if (videoRef.current && videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach(t => t.stop());
+          videoRef.current.srcObject = null;
         }
       }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-        setIsCameraActive(true);
-      }
-    } catch (err: any) {
-      console.error("Camera fail:", err);
-      setErrorMsg("Unable to access front/back camera. Make sure permissions are granted.");
-      setIsCameraActive(false);
     }
+
+    setupCamera();
+
+    return () => {
+      isActive = false;
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isCameraActive]);
+
+  // Web camera handlers
+  const startCamera = () => {
+    setResult(null);
+    setErrorMsg(null);
+    setSelectedImage(null);
+    setSelectedSampleId(null);
+    setIsCameraActive(true);
   };
 
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(t => t.stop());
-      videoRef.current.srcObject = null;
-    }
     setIsCameraActive(false);
   };
 
@@ -238,10 +269,6 @@ export default function App() {
       }
     }
   };
-
-  useEffect(() => {
-    return () => stopCamera();
-  }, []);
 
   // File drop and select handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -561,11 +588,336 @@ Provide your analysis in clean JSON.
         </div>
       </header>
 
+      {/* Sub-Header Navigation Tabs */}
+      <div id="sub-header-nav" className="bg-white border-b border-slate-200 dark:bg-stone-900 dark:border-stone-800 flex justify-center py-2.5 px-4 sticky top-0 z-10 select-none">
+        <div className="flex space-x-2 w-full max-w-xl">
+          <button 
+            id="nav-scan-tab"
+            onClick={() => {
+              setActiveTab("scan");
+              stopCamera();
+              setSelectedImage(null);
+              setResult(null);
+            }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+              activeTab === "scan" 
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10" 
+                : "bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100 hover:text-slate-800 dark:bg-stone-850 dark:border-stone-800 dark:text-stone-350 dark:hover:bg-stone-850 dark:hover:text-white"
+            }`}
+          >
+            <Camera className="h-3.5 w-3.5" />
+            <span>OCR Verifier</span>
+          </button>
+
+          <button 
+            id="nav-levels-tab"
+            onClick={() => {
+              setActiveTab("levels");
+              stopCamera();
+            }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+              activeTab === "levels" 
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10" 
+                : "bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100 hover:text-slate-800 dark:bg-stone-850 dark:border-stone-800 dark:text-stone-350 dark:hover:bg-stone-850 dark:hover:text-white"
+            }`}
+          >
+            <Layers className="h-3.5 w-3.5" />
+            <span>Rating Levels</span>
+          </button>
+
+          <button 
+            id="nav-dictionary-tab"
+            onClick={() => {
+              setActiveTab("dictionary");
+              stopCamera();
+            }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+              activeTab === "dictionary" 
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10" 
+                : "bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100 hover:text-slate-800 dark:bg-stone-850 dark:border-stone-800 dark:text-stone-350 dark:hover:bg-stone-850 dark:hover:text-white"
+            }`}
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span>Additives Dictionary</span>
+          </button>
+        </div>
+      </div>
+
       {/* Main Container */}
-      <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
         
-        {/* Left Column (Scan Controls) occupies col-span-5 */}
-        <div className="lg:col-span-5 flex flex-col space-y-6">
+        {/* RATING LEVELS DEDICATED VIEW */}
+        {activeTab === "levels" && (
+          <div className="max-w-2xl mx-auto w-full py-2">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm dark:bg-stone-900 dark:border-stone-800">
+              <AboutLevels />
+            </div>
+          </div>
+        )}
+
+        {/* FOOD ADDITIVES DIRECTORY DEDICATED VIEW */}
+        {activeTab === "dictionary" && (
+          <div className="max-w-2xl mx-auto w-full py-2">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm dark:bg-stone-900 dark:border-stone-800">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 flex items-center justify-center">
+                  <Search className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800 dark:text-white">Japanese Food Additives Reference</h3>
+                  <p className="text-xs text-slate-500 dark:text-stone-400 mt-0.5">
+                    Verify specific food additives or Japanese ingredients instantly.
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative mt-5">
+                <input 
+                  type="text"
+                  placeholder="Type Kanji (e.g. 豚肉), Additive number (e.g. 120 / E120), or name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full text-xs pl-9 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-stone-800 outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-all dark:bg-stone-800 dark:border-stone-700 dark:text-stone-100"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-6 max-h-[500px] overflow-y-auto space-y-3 pr-1">
+                {searchQuery ? (
+                  filteredResults.length === 0 ? (
+                    <div className="text-center py-10">
+                      <HelpCircle className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                      <p className="text-xs text-slate-500 dark:text-stone-400">No matches found for "{searchQuery}".</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Try: "豚", "ゼラチン", "E120", "471", "shortening"</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredResults.map(item => {
+                        const isHaram = item.category === "Haram";
+                        const isDoubtful = item.category === "Syubhat" || item.category === "Mushbooh";
+                        const isHalal = item.category === "Halal";
+                        
+                        let cardBg = "bg-slate-50 border-slate-200 dark:bg-stone-850/40 dark:border-stone-800";
+                        let badgeColor = "text-slate-650 bg-slate-100 border border-slate-205 dark:bg-stone-800 dark:text-stone-400";
+                        
+                        if (isHaram) {
+                          cardBg = "bg-red-50 border-red-100 dark:bg-red-950/20 dark:border-red-900/60";
+                          badgeColor = "text-red-650 dark:text-red-400 border-red-200 dark:border-red-900/40";
+                        } else if (isDoubtful) {
+                          cardBg = "bg-amber-50 border-amber-100 dark:bg-amber-950/25 dark:border-amber-900/60";
+                          badgeColor = "text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40";
+                        } else if (isHalal) {
+                          cardBg = "bg-emerald-50 border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/40";
+                          badgeColor = "text-emerald-100 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/40";
+                        }
+
+                        let codeDisplay = "";
+                        if (item.code) {
+                          const rawNum = item.code.replace(/^E/, "");
+                          codeDisplay = item.code.startsWith("E") ? `E${rawNum} / ${rawNum}` : `${rawNum} (E${rawNum})`;
+                        }
+
+                        return (
+                          <div key={item.id} className={`text-xs p-3.5 border rounded-xl transition-all ${cardBg}`}>
+                            <div className="flex justify-between items-start gap-2">
+                              <div>
+                                <span className="font-extrabold text-stone-850 dark:text-white">
+                                  {item.name} {item.japaneseName ? `(${item.japaneseName})` : ""}
+                                </span>
+                                {codeDisplay && (
+                                  <span className="block text-[10px] text-stone-500 dark:text-stone-400 font-semibold mt-0.5 font-mono">
+                                    Additive Reference: {codeDisplay}
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`text-[9px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded border shrink-0 ${badgeColor}`}>
+                                {item.category}
+                              </span>
+                            </div>
+                            {item.description && (
+                              <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1 italic leading-normal border-t border-slate-100 dark:border-stone-800 pt-1.5">
+                                {item.description}
+                              </p>
+                            )}
+                            <p className="text-[10px] text-stone-700 dark:text-stone-300 mt-1.5 px-2 py-1 bg-white/70 dark:bg-black/25 rounded font-medium leading-relaxed">
+                              Verification Note: {item.halalStatus}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 dark:bg-stone-850/10 dark:border-stone-800">
+                    <FileText className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-xs text-stone-600 dark:text-stone-300 font-bold">Search Database</p>
+                    <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
+                      Search E-numbers or raw ingredient keywords (e.g. "豚", "Mochi", "shortening"). The lookup algorithm parses both formats symmetrically!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* OCR VERIFIER WORKFLOW */}
+        {activeTab === "scan" && (
+          <div className="w-full">
+            
+            {/* SUB-FLOW 1: DEDICATED REAL-TIME CAMERA SCANNER VIEW */}
+            {isCameraActive && !selectedImage && (
+              <div className="max-w-xl mx-auto w-full py-2">
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg dark:bg-stone-900 dark:border-stone-800 overflow-hidden">
+                  
+                  {/* Camera Header Row */}
+                  <div className="flex items-center justify-between pb-3.5 border-b border-slate-150 mb-4 dark:border-stone-800">
+                    <div className="flex items-center gap-2">
+                      <Camera className="h-5 w-5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+                      <span className="font-extrabold text-sm text-slate-800 dark:text-white">Active Camera Scanner</span>
+                    </div>
+                    <button 
+                      onClick={stopCamera}
+                      className="text-slate-500 hover:text-slate-850 flex items-center gap-1 py-1 px-2.5 bg-slate-50 hover:bg-slate-100 text-[11px] font-bold rounded-lg transition-all dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-750 cursor-pointer"
+                    >
+                      <ArrowLeft className="h-3 w-3" /> 
+                      <span>Cancel Scan</span>
+                    </button>
+                  </div>
+
+                  {/* Realtime Video Feed Canvas Frame */}
+                  <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border border-stone-800 bg-black shadow-inner">
+                    <video 
+                      ref={videoRef}
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover scale-x-[-1]"
+                    />
+
+                    {/* Highly Professional Overlay Sight Guidelines Target */}
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+                      <div className="relative w-full h-full border-2 border-dashed border-emerald-500/40 rounded-xl">
+                        {/* 4 Glowing Corner Angles for Targeting Alignment */}
+                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-emerald-500 -mt-1 -ml-1"></div>
+                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-emerald-500 -mt-1 -mr-1"></div>
+                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-emerald-500 -mb-1 -ml-1"></div>
+                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-emerald-500 -mb-1 -mr-1"></div>
+
+                        {/* Scrolling Green OCR Laser Scan Line */}
+                        <div className="absolute inset-x-0 h-0.5 bg-emerald-400 shadow-[0_0_15px_#10b981] animate-[scan_2s_ease-in-out_infinite]"></div>
+                      </div>
+                    </div>
+
+                    <div className="absolute top-3 left-3 bg-black/60 px-2.5 py-1 rounded text-[10px] text-emerald-450 font-bold tracking-wide uppercase flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                      <span>Live Camera Feed</span>
+                    </div>
+                  </div>
+
+                  {/* Instructions Guide */}
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-4 text-center leading-relaxed max-w-sm mx-auto">
+                    Align your product's Japanese or English ingredients text panel inside the targeting scope and snap a capture.
+                  </p>
+
+                  {/* Trigger Call to Actions */}
+                  <div className="mt-5 flex items-center justify-center gap-3">
+                    <button 
+                      onClick={capturePhoto}
+                      className="px-6 py-3 bg-emerald-600 hover:bg-emerald-550 text-white rounded-full text-xs font-extrabold flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer"
+                    >
+                      <Camera className="h-4.5 w-4.5" /> Capture & Verify
+                    </button>
+                    <button 
+                      onClick={stopCamera}
+                      className="px-4 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-stone-800 dark:hover:bg-stone-750 text-stone-700 dark:text-stone-300 rounded-full text-xs font-bold transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            )}
+
+            {/* SUB-FLOW 2: FIRST MAIN PAGE DISPLAY (2 SOLID CTAs ONLY) */}
+            {!selectedImage && !isCameraActive && (
+              <div className="max-w-xl mx-auto w-full py-4 text-center animate-fade-in">
+                
+                {/* THE 2 GRAND CALL TO ACTIONS SELECTED BY THE USER */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+                  
+                  {/* CTA 1: LIVE WEBCAM SCANNER (DEDICATED SCAN AREA) */}
+                  <button 
+                    id="cta-camera-scan"
+                    onClick={startCamera}
+                    className="flex flex-col items-center justify-center p-6 bg-emerald-600 hover:bg-emerald-550 text-white rounded-2xl border border-emerald-550 shadow-lg shadow-emerald-600/10 hover:shadow-emerald-600/25 active:scale-[0.98] transition-all group cursor-pointer"
+                  >
+                    <div className="h-12 w-12 rounded-full bg-emerald-500 flex items-center justify-center mb-4 border border-emerald-400/30 group-hover:scale-105 transition-transform shadow-inner text-white">
+                      <Camera className="h-6 w-6" />
+                    </div>
+                    <span className="font-extrabold text-sm tracking-wide">Live Camera Scan</span>
+                    <span className="text-[11px] text-emerald-100/95 mt-1 px-1.5 leading-snug">
+                      Point your lens at standard Japanese food ingredients list to analyze them step-by-step.
+                    </span>
+                  </button>
+
+                  {/* CTA 2: UPLOAD IMAGE FILE PANEL */}
+                  <button 
+                    id="cta-upload-photo"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center p-6 bg-white hover:bg-slate-100 text-slate-850 rounded-2xl border border-slate-205 hover:border-slate-300 shadow hover:shadow-md active:scale-[0.98] transition-all group dark:bg-stone-900 dark:border-stone-850 dark:text-white dark:hover:bg-stone-850 cursor-pointer"
+                  >
+                    <div className="h-12 w-12 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center mb-4 border border-sky-100 group-hover:scale-105 transition-transform dark:bg-sky-950/20 dark:text-sky-400 dark:border-sky-900/35 shadow-inner">
+                      <Upload className="h-6 w-6" />
+                    </div>
+                    <span className="font-extrabold text-sm tracking-wide">Upload Label Image</span>
+                    <span className="text-[11px] text-slate-500 dark:text-stone-400 mt-1 px-1.5 leading-snug font-medium">
+                      Drop a photograph of standard Japanese food ingredients list to analyze them step-by-step.
+                    </span>
+                  </button>
+
+                </div>
+
+                {/* Instant trial template presets collapsed drawer */}
+                <div id="quick-preset-shortcuts" className="mt-10 pt-6 border-t border-slate-200 dark:border-stone-850 w-full max-w-sm mx-auto">
+                  <span className="text-[9px] text-slate-400 dark:text-stone-550 uppercase tracking-widest font-black block mb-3">
+                    Or instantly test with presets
+                  </span>
+                  <div className="flex justify-center gap-2 flex-wrap">
+                    {DEMO_SAMPLES.map(sample => (
+                      <button 
+                        key={sample.id}
+                        onClick={() => {
+                          setActiveTab("scan");
+                          handleSelectSample(sample);
+                        }}
+                        className="text-[10px] bg-white border border-slate-200 hover:bg-slate-50 text-slate-750 px-3 py-1.5 rounded-xl font-bold dark:bg-stone-900 dark:border-stone-800 dark:text-stone-300 dark:hover:bg-stone-850 transition-all shadow-sm flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>{sample.id === "sample1" ? "🍓" : sample.id === "sample2" ? "🍵" : "🍛"}</span>
+                        <span>{sample.name.split(" ")[0]} ({sample.badge.split(" ")[0]})</span>
+                        <ChevronRight className="h-2.5 w-2.5 opacity-55 text-slate-400" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* SUB-FLOW 3: SELECTED IMAGE RESULT ANALYSIS SPLIT GRID */}
+            {selectedImage && !isCameraActive && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* Left Column (Scan Controls) occupies col-span-5 */}
+                <div className="lg:col-span-5 flex flex-col space-y-6">
           <section className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-full dark:bg-stone-900 dark:border-stone-800">
             
             {/* Header label */}
@@ -1088,6 +1440,10 @@ Provide your analysis in clean JSON.
           )}
 
         </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Status Bar Footer matching "Professional Polish" layout */}
