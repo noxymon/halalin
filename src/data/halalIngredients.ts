@@ -539,6 +539,154 @@ export const E_PREFIX_LIST: IngredientInfo[] = [
   { id: "e483", code: "E483", name: "Stearyl Tartrate", category: "Mushbooh", description: "Esters of Fatty Acids", halalStatus: "Mushbooh (Halal if plant fat, Haram if pork fat)." }
 ];
 
+export interface CertifiedCompany {
+  id: string;
+  companyName: string;
+  japaneseCompanyName?: string;
+  certifiedProducts: string[];
+  category: string;
+  certificateNo?: string;
+}
+
+export const JHA_CERTIFIED_COMPANIES: CertifiedCompany[] = [
+  {
+    id: "jha1",
+    companyName: "Kikkoman Corporation",
+    japaneseCompanyName: "キッコーマン株式会社",
+    certifiedProducts: [
+      "Kikkoman Halal Soy Sauce (ハラールしょうゆ)",
+      "Kikkoman Halal Gluten-Free Soy Sauce"
+    ],
+    category: "Seasoning / Soy Sauce"
+  },
+  {
+    id: "jha2",
+    companyName: "Yamasa Corporation",
+    japaneseCompanyName: "ヤマサ醤油株式会社",
+    certifiedProducts: [
+      "Yamasa Halal Soy Sauce (ヤマサ ハラールしょうゆ)",
+      "Yamasa Halal Tamari Soy Sauce"
+    ],
+    category: "Seasoning / Soy Sauce"
+  },
+  {
+    id: "jha3",
+    companyName: "S&B Foods Inc.",
+    japaneseCompanyName: "エスビー食品株式会社",
+    certifiedProducts: [
+      "S&B Halal Curry Powder",
+      "S&B Halal Golden Curry Mix (Medium Hot / Hot)",
+      "S&B Prepared Wasabi (ハラールおろし生わさび)"
+    ],
+    category: "Curry / Wasabi / Spices"
+  },
+  {
+    id: "jha4",
+    companyName: "Otsuka Foods Co., Ltd.",
+    japaneseCompanyName: "大塚食品株式会社",
+    certifiedProducts: [
+      "Halal Bon Curry Gold (Mild, Medium, Hot)",
+      "Halal Veggie Bon Curry",
+      "Mannanhikari (Processed Konjac Rice)"
+    ],
+    category: "Retort Curry / Processed Food"
+  },
+  {
+    id: "jha5",
+    companyName: "House Foods Corporation",
+    japaneseCompanyName: "ハウス食品株式会社",
+    certifiedProducts: [
+      "House Business-use Halal Curry Flakes",
+      "Java Curry Halal series",
+      "Kokumaru Curry Halal series"
+    ],
+    category: "Curry Flakes / Seasoning"
+  },
+  {
+    id: "jha6",
+    companyName: "Seiu Co., Ltd.",
+    japaneseCompanyName: "整宇株式会社 / セイウ",
+    certifiedProducts: [
+      "Halal Non-Alcohol Sweet Cooking Liquid (ハラールみりんタイプ)",
+      "Halal Soy Sauce (ハラールしょうゆ)",
+      "Halal Gyoza (Chicken & Vegetable)",
+      "Halal Salad Dressings"
+    ],
+    category: "Cooking Wine / Soy Sauce / Frozen Gyoza"
+  },
+  {
+    id: "jha7",
+    companyName: "Hikari Miso Co., Ltd.",
+    japaneseCompanyName: "ひかり味噌株式会社",
+    certifiedProducts: [
+      "Organic Miso Paste (additive-free)",
+      "Halal Certified Instant Miso Soup series"
+    ],
+    category: "Miso Paste / Instant Soup"
+  },
+  {
+    id: "jha8",
+    companyName: "Ajinomoto Co., Inc.",
+    japaneseCompanyName: "味の素株式会社",
+    certifiedProducts: [
+      "AJI-NO-MOTO Monosodium Glutamate (specifically certified grades)",
+      "Hondashi Halal-compliant seasoning",
+      "Pure Amino Acid product ingredients"
+    ],
+    category: "Flavor Enhancer / Amino Acids"
+  },
+  {
+    id: "jha9",
+    companyName: "Kewpie Corporation",
+    japaneseCompanyName: "キユーピー株式会社",
+    certifiedProducts: [
+      "Halal Liquid Whole Egg, Egg Yolk, Egg Whites",
+      "Halal Dressing & Mayonnaise lines (export/custom lines)"
+    ],
+    category: "Mayonnaise / Industrial Eggs"
+  },
+  {
+    id: "jha10",
+    companyName: "Morinaga Milk Industry Co., Ltd.",
+    japaneseCompanyName: "森永乳業株式会社",
+    certifiedProducts: [
+      "Morinaga Whey Powder, Skim Milk Powder, Lactose ingredients",
+      "Halal-certified infant formula raw materials"
+    ],
+    category: "Dairy powder / Sweeteners"
+  },
+  {
+    id: "jha11",
+    companyName: "Marusan-Ai Co., Ltd.",
+    japaneseCompanyName: "マルサンアイ株式会社",
+    certifiedProducts: [
+      "Marusan Halal Organic Soy Milk",
+      "Marusan Additive-Free Miso Paste"
+    ],
+    category: "Soy Milk / Miso Paste"
+  },
+  {
+    id: "jha12",
+    companyName: "Tamanoi Vinegar Co., Ltd.",
+    japaneseCompanyName: "タマノイ酢株式会社",
+    certifiedProducts: [
+      "Sushi Vinegar Powder (Sushinoko)",
+      "Tamanoi Apple Vinegar drinks"
+    ],
+    category: "Vinegar powder"
+  },
+  {
+    id: "jha13",
+    companyName: "Mizkan Holdings Co., Ltd.",
+    japaneseCompanyName: "Mizkan株式会社",
+    certifiedProducts: [
+      "Halal Grain Vinegar",
+      "Halal Sushi Seasoning (for exports)"
+    ],
+    category: "Vinegar / Sushi Seasoning"
+  }
+];
+
 export const ALL_INGREDIENTS = [
   ...HARAM_KANJI_LIST,
   ...SYUBHAT_INGREDIENTS,

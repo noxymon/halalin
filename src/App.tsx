@@ -25,11 +25,12 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  ChevronRight
+  ChevronRight,
+  Globe
 } from "lucide-react";
 import { motion } from "motion/react";
 import AboutLevels from "./components/AboutLevels";
-import { ALL_INGREDIENTS, HARAM_KANJI_LIST, SYUBHAT_INGREDIENTS } from "./data/halalIngredients";
+import { ALL_INGREDIENTS, HARAM_KANJI_LIST, SYUBHAT_INGREDIENTS, JHA_CERTIFIED_COMPANIES } from "./data/halalIngredients";
 import { GoogleGenAI, Type } from "@google/genai";
 
 // Initialize Gemini Client
@@ -169,13 +170,27 @@ export default function App() {
   const [customApiKey, setCustomApiKey] = useState<string>(() => {
     return localStorage.getItem("halal_custom_api_key") || "";
   });
+  const [enableSearchGrounding, setEnableSearchGrounding] = useState<boolean>(() => {
+    return localStorage.getItem("halal_enable_search_grounding") !== "false";
+  });
   const [showKey, setShowKey] = useState(false);
 
-  const saveSettings = (key: string, enabled: boolean) => {
+  // Sync settings back to localStorage if modal is closed/cancelled
+  useEffect(() => {
+    if (!isSettingsOpen) {
+      setCustomApiKey(localStorage.getItem("halal_custom_api_key") || "");
+      setUseCustomKey(localStorage.getItem("halal_use_custom_key") === "true");
+      setEnableSearchGrounding(localStorage.getItem("halal_enable_search_grounding") !== "false");
+    }
+  }, [isSettingsOpen]);
+
+  const saveSettings = (key: string, enabled: boolean, grounding: boolean) => {
     localStorage.setItem("halal_custom_api_key", key.trim());
     localStorage.setItem("halal_use_custom_key", enabled ? "true" : "false");
+    localStorage.setItem("halal_enable_search_grounding", grounding ? "true" : "false");
     setCustomApiKey(key.trim());
     setUseCustomKey(enabled);
+    setEnableSearchGrounding(grounding);
     setIsSettingsOpen(false);
   };
 
@@ -427,6 +442,7 @@ export default function App() {
       "Decoding food packaging additives & E-numbers...",
       "Matching found elements with Islamic dietary rulebook...",
       "Analyzing shared-production line flags...",
+      ...(enableSearchGrounding ? ["Scanning live Google search indexes for brand status..."] : []),
       "Generating Halal certification verification details..."
     ];
 
@@ -524,10 +540,14 @@ Your instructions:
    On product packaging (including Japanese ingredients and international listings), food additives can be listed as E-numbers (e.g., "E120", "E471") or as raw numbers without any "E" prefix (e.g., "120", "471"). Both notations are completely symmetric and identical.
    They refer to the exact same substance listed in the reference catalog and are classified under the same category of Halal/Haram/Syubhat status.
    Map any raw numbers found in the ingredients text (like "471" or "322") directly to their matching E-number representation in the catalog (like "E471" or "E322") and vice versa.
-6. GOOGLE SEARCH GROUNDING: Use Google Search Grounding to cross-examine and look up details about this Japanese product or its ingredients, brand manufacturer declarations, or recent inquiries regarding its Halal certification status. Verify online if the specific food brand or product ingredients panel contains non-halal derivatives. Use these search results to provide highly precise and factual explanations.
+${enableSearchGrounding ? `6. GOOGLE SEARCH GROUNDING: Use Google Search Grounding to cross-examine and look up details about this Japanese product or its ingredients, brand manufacturer declarations, or recent inquiries regarding its Halal certification status. Verify online if the specific food brand or product ingredients panel contains non-halal derivatives. Use these search results to provide highly precise and factual explanations.` : ""}
 
 Reference catalog of ingredients and additives to use (derived from Numbers_With_No_E_Prefix.pdf and E_Numbers_With_E_Prefix.pdf):
 ${JSON.stringify(ingredientReference, null, 2)}
+
+Official Japan Halal Association (JHA) Certified Brand Reference List:
+If the audited brand name or company matches one of these companies, and the product matches their certified product entries, categorize the product immediately as "H1" (Active Halal logo or manufacturer certification active):
+${JSON.stringify(JHA_CERTIFIED_COMPANIES, null, 2)}
 
 Provide your analysis in clean JSON.
       `;
@@ -561,18 +581,23 @@ Provide your analysis in clean JSON.
         required: ["productName", "halalLevel", "halalLevelExplanation", "extractedIngredientsText", "ingredientsAnalysis", "finalRecommendation"]
       };
 
+      const apiConfig: any = {
+        responseMimeType: "application/json",
+        responseSchema: schema,
+        temperature: 0.1
+      };
+
+      if (enableSearchGrounding) {
+        apiConfig.tools = [{ googleSearch: {} }];
+      }
+
       const resultCall = await activeAi.models.generateContent({
         model: "gemini-3.1-flash-lite",
         contents: [
           imagePart,
           { text: promptText }
         ],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: schema,
-          temperature: 0.1,
-          tools: [{ googleSearch: {} }]
-        }
+        config: apiConfig
       });
 
       clearInterval(progressTimer);
@@ -1416,6 +1441,27 @@ Provide your analysis in clean JSON.
                     </div>
                   </motion.div>
                 )}
+
+                {/* Google Search Grounding Toggle */}
+                <div className="pt-3.5 border-t border-slate-100 dark:border-stone-800">
+                  <label className="flex items-start gap-2.5 cursor-pointer group">
+                    <input 
+                      type="checkbox"
+                      checked={enableSearchGrounding}
+                      onChange={(e) => setEnableSearchGrounding(e.target.checked)}
+                      className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4 dark:border-stone-700 dark:bg-stone-800"
+                    />
+                    <div>
+                      <span className="font-bold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+                        <Globe className="h-3.5 w-3.5 text-sky-500" />
+                        Enable Google Search Grounding
+                      </span>
+                      <p className="text-[11px] text-slate-400 dark:text-stone-450 mt-0.5 leading-relaxed">
+                        Allow the model to leverage Google Search in real-time to cross-examine Japanese brand declarations and Halal status. <strong>Disable this to conserve API quota and make scans faster.</strong>
+                      </p>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               {/* Status information */}
@@ -1440,6 +1486,7 @@ Provide your analysis in clean JSON.
                 onClick={() => {
                   setCustomApiKey(localStorage.getItem("halal_custom_api_key") || "");
                   setUseCustomKey(localStorage.getItem("halal_use_custom_key") === "true");
+                  setEnableSearchGrounding(localStorage.getItem("halal_enable_search_grounding") !== "false");
                   setIsSettingsOpen(false);
                 }}
                 className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-755 border border-slate-300 rounded-xl font-bold text-xs transition-colors dark:bg-stone-800 dark:border-stone-750 dark:text-stone-300 dark:hover:bg-stone-750"
@@ -1449,7 +1496,7 @@ Provide your analysis in clean JSON.
               <button 
                 type="button"
                 onClick={() => {
-                  saveSettings(customApiKey, useCustomKey);
+                  saveSettings(customApiKey, useCustomKey, enableSearchGrounding);
                 }}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md transition-colors"
               >
