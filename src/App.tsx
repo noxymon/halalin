@@ -135,7 +135,6 @@ const DEMO_SAMPLES = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"scan" | "levels" | "dictionary">("scan");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [customText, setCustomText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -143,7 +142,7 @@ export default function App() {
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isRatingLevelsOpen, setIsRatingLevelsOpen] = useState(false);
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
 
   // Custom User Gemini API key configurations
@@ -522,33 +521,6 @@ Provide your analysis in clean JSON.
     }
   };
 
-  // Search local dictionary filters searching all ingredients (Haram, Syubhat, E-numbers with or without E)
-  const searchQueryLower = searchQuery.toLowerCase().trim();
-  const searchNumberOnly = searchQueryLower.replace(/^e/, ""); // e.g. "e120" -> "120"
-  const isSearchNumber = /^\d+$/.test(searchNumberOnly);
-
-  const filteredResults = ALL_INGREDIENTS.filter(item => {
-    // 1. Check text fields (English, Japanese, reading, or description)
-    const textFieldsMatch = 
-      item.name.toLowerCase().includes(searchQueryLower) ||
-      (item.japaneseName && item.japaneseName.toLowerCase().includes(searchQueryLower)) ||
-      (item.reading && item.reading.toLowerCase().includes(searchQueryLower)) ||
-      (item.description && item.description.toLowerCase().includes(searchQueryLower));
-      
-    if (textFieldsMatch) return true;
-
-    // 2. Symmetric code check (supporting "E120" and "120" interchangeably)
-    if (item.code) {
-      const itemCodeLower = item.code.toLowerCase();
-      const itemNumberOnly = itemCodeLower.replace(/^e/, "");
-      
-      if (itemCodeLower.includes(searchQueryLower)) return true;
-      if (isSearchNumber && itemNumberOnly === searchNumberOnly) return true;
-    }
-
-    return false;
-  });
-
   return (
     <div id="halal-pro-app" className="min-h-screen bg-slate-50 flex flex-col font-sans text-stone-800 selection:bg-emerald-100 dark:bg-stone-950 dark:text-stone-100">
       
@@ -560,12 +532,21 @@ Provide your analysis in clean JSON.
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight dark:text-white flex items-center">
-              HalalVerify <span className="text-emerald-600 font-bold ml-1.5 px-1.5 py-0.5 rounded bg-emerald-50 text-xs tracking-wider border border-emerald-200 dark:bg-emerald-950/50">PRO</span>
+              HalalVerify
             </h1>
           </div>
         </div>
         
         <div className="flex items-center space-x-3">
+          <button 
+            id="rating-levels-trigger"
+            onClick={() => setIsRatingLevelsOpen(true)}
+            className="flex items-center justify-center h-8 w-8 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 hover:text-emerald-600 rounded-xl transition-all dark:bg-stone-850 dark:border-stone-800 dark:text-stone-200 dark:hover:bg-stone-800 dark:hover:text-emerald-400"
+            title="Rating Levels Status"
+          >
+            <Layers className="h-4 w-4" />
+          </button>
+
           <button 
             id="api-settings-trigger"
             onClick={() => setIsSettingsOpen(true)}
@@ -588,190 +569,11 @@ Provide your analysis in clean JSON.
         </div>
       </header>
 
-      {/* Sub-Header Navigation Tabs */}
-      <div id="sub-header-nav" className="bg-white border-b border-slate-200 dark:bg-stone-900 dark:border-stone-800 flex justify-center py-2.5 px-4 sticky top-0 z-10 select-none">
-        <div className="flex space-x-2 w-full max-w-xl">
-          <button 
-            id="nav-scan-tab"
-            onClick={() => {
-              setActiveTab("scan");
-              stopCamera();
-              setSelectedImage(null);
-              setResult(null);
-            }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "scan" 
-                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10" 
-                : "bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100 hover:text-slate-800 dark:bg-stone-850 dark:border-stone-800 dark:text-stone-350 dark:hover:bg-stone-850 dark:hover:text-white"
-            }`}
-          >
-            <Camera className="h-3.5 w-3.5" />
-            <span>OCR Verifier</span>
-          </button>
-
-          <button 
-            id="nav-levels-tab"
-            onClick={() => {
-              setActiveTab("levels");
-              stopCamera();
-            }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "levels" 
-                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10" 
-                : "bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100 hover:text-slate-800 dark:bg-stone-850 dark:border-stone-800 dark:text-stone-350 dark:hover:bg-stone-850 dark:hover:text-white"
-            }`}
-          >
-            <Layers className="h-3.5 w-3.5" />
-            <span>Rating Levels</span>
-          </button>
-
-          <button 
-            id="nav-dictionary-tab"
-            onClick={() => {
-              setActiveTab("dictionary");
-              stopCamera();
-            }}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "dictionary" 
-                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/10" 
-                : "bg-slate-50 text-slate-600 border border-slate-100 hover:bg-slate-100 hover:text-slate-800 dark:bg-stone-850 dark:border-stone-800 dark:text-stone-350 dark:hover:bg-stone-850 dark:hover:text-white"
-            }`}
-          >
-            <Search className="h-3.5 w-3.5" />
-            <span>Additives Dictionary</span>
-          </button>
-        </div>
-      </div>
-
       {/* Main Container */}
       <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
         
-        {/* RATING LEVELS DEDICATED VIEW */}
-        {activeTab === "levels" && (
-          <div className="max-w-2xl mx-auto w-full py-2">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm dark:bg-stone-900 dark:border-stone-800">
-              <AboutLevels />
-            </div>
-          </div>
-        )}
-
-        {/* FOOD ADDITIVES DIRECTORY DEDICATED VIEW */}
-        {activeTab === "dictionary" && (
-          <div className="max-w-2xl mx-auto w-full py-2">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm dark:bg-stone-900 dark:border-stone-800">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 flex items-center justify-center">
-                  <Search className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-800 dark:text-white">Japanese Food Additives Reference</h3>
-                  <p className="text-xs text-slate-500 dark:text-stone-400 mt-0.5">
-                    Verify specific food additives or Japanese ingredients instantly.
-                  </p>
-                </div>
-              </div>
-
-              <div className="relative mt-5">
-                <input 
-                  type="text"
-                  placeholder="Type Kanji (e.g. 豚肉), Additive number (e.g. 120 / E120), or name..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full text-xs pl-9 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-stone-800 outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-all dark:bg-stone-800 dark:border-stone-700 dark:text-stone-100"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                {searchQuery && (
-                  <button 
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-white"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              <div className="mt-6 max-h-[500px] overflow-y-auto space-y-3 pr-1">
-                {searchQuery ? (
-                  filteredResults.length === 0 ? (
-                    <div className="text-center py-10">
-                      <HelpCircle className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                      <p className="text-xs text-slate-500 dark:text-stone-400">No matches found for "{searchQuery}".</p>
-                      <p className="text-[11px] text-slate-400 mt-1">Try: "豚", "ゼラチン", "E120", "471", "shortening"</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {filteredResults.map(item => {
-                        const isHaram = item.category === "Haram";
-                        const isDoubtful = item.category === "Syubhat" || item.category === "Mushbooh";
-                        const isHalal = item.category === "Halal";
-                        
-                        let cardBg = "bg-slate-50 border-slate-200 dark:bg-stone-850/40 dark:border-stone-800";
-                        let badgeColor = "text-slate-650 bg-slate-100 border border-slate-205 dark:bg-stone-800 dark:text-stone-400";
-                        
-                        if (isHaram) {
-                          cardBg = "bg-red-50 border-red-100 dark:bg-red-950/20 dark:border-red-900/60";
-                          badgeColor = "text-red-650 dark:text-red-400 border-red-200 dark:border-red-900/40";
-                        } else if (isDoubtful) {
-                          cardBg = "bg-amber-50 border-amber-100 dark:bg-amber-950/25 dark:border-amber-900/60";
-                          badgeColor = "text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40";
-                        } else if (isHalal) {
-                          cardBg = "bg-emerald-50 border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/40";
-                          badgeColor = "text-emerald-100 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/40";
-                        }
-
-                        let codeDisplay = "";
-                        if (item.code) {
-                          const rawNum = item.code.replace(/^E/, "");
-                          codeDisplay = item.code.startsWith("E") ? `E${rawNum} / ${rawNum}` : `${rawNum} (E${rawNum})`;
-                        }
-
-                        return (
-                          <div key={item.id} className={`text-xs p-3.5 border rounded-xl transition-all ${cardBg}`}>
-                            <div className="flex justify-between items-start gap-2">
-                              <div>
-                                <span className="font-extrabold text-stone-850 dark:text-white">
-                                  {item.name} {item.japaneseName ? `(${item.japaneseName})` : ""}
-                                </span>
-                                {codeDisplay && (
-                                  <span className="block text-[10px] text-stone-500 dark:text-stone-400 font-semibold mt-0.5 font-mono">
-                                    Additive Reference: {codeDisplay}
-                                  </span>
-                                )}
-                              </div>
-                              <span className={`text-[9px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded border shrink-0 ${badgeColor}`}>
-                                {item.category}
-                              </span>
-                            </div>
-                            {item.description && (
-                              <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1 italic leading-normal border-t border-slate-100 dark:border-stone-800 pt-1.5">
-                                {item.description}
-                              </p>
-                            )}
-                            <p className="text-[10px] text-stone-700 dark:text-stone-300 mt-1.5 px-2 py-1 bg-white/70 dark:bg-black/25 rounded font-medium leading-relaxed">
-                              Verification Note: {item.halalStatus}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )
-                ) : (
-                  <div className="text-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 dark:bg-stone-850/10 dark:border-stone-800">
-                    <FileText className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                    <p className="text-xs text-stone-600 dark:text-stone-300 font-bold">Search Database</p>
-                    <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
-                      Search E-numbers or raw ingredient keywords (e.g. "豚", "Mochi", "shortening"). The lookup algorithm parses both formats symmetrically!
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* OCR VERIFIER WORKFLOW */}
-        {activeTab === "scan" && (
-          <div className="w-full">
+        <div className="w-full">
             
             {/* SUB-FLOW 1: DEDICATED REAL-TIME CAMERA SCANNER VIEW */}
             {isCameraActive && !selectedImage && (
@@ -896,7 +698,6 @@ Provide your analysis in clean JSON.
                       <button 
                         key={sample.id}
                         onClick={() => {
-                          setActiveTab("scan");
                           handleSelectSample(sample);
                         }}
                         className="text-[10px] bg-white border border-slate-200 hover:bg-slate-50 text-slate-750 px-3 py-1.5 rounded-xl font-bold dark:bg-stone-900 dark:border-stone-800 dark:text-stone-300 dark:hover:bg-stone-850 transition-all shadow-sm flex items-center gap-1 cursor-pointer"
@@ -1107,89 +908,7 @@ Provide your analysis in clean JSON.
             )}
           </section>
 
-          {/* Local dictionary search widget box */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm dark:bg-stone-900 dark:border-stone-800">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-              <Search className="h-3.5 w-3.5 text-stone-400" /> Japanese Food Additives Reference
-            </h3>
-            
-            <p className="text-[11px] text-stone-500 dark:text-stone-400 mb-3 leading-relaxed">
-              Scan below to immediately check specific ingredients (Kanji or English) used in Japan.
-            </p>
 
-            <input 
-              type="text"
-              placeholder="Type Kanji (e.g. 豚肉) or name of emulsifier..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-stone-700 bg-slate-50 dark:bg-stone-800 text-stone-800 dark:text-stone-100 outline-none focus:ring-1 focus:ring-emerald-500"
-            />
-
-            {searchQuery && (
-              <div className="mt-4 max-h-[180px] overflow-y-auto space-y-2 pr-1">
-                {filteredResults.length === 0 ? (
-                  <p className="text-[11px] text-stone-400 italic">No matches found for "{searchQuery}". Try "豚", "E120", "471" or "shortening".</p>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredResults.map(item => {
-                      const isHaram = item.category === "Haram";
-                      const isDoubtful = item.category === "Syubhat" || item.category === "Mushbooh";
-                      const isHalal = item.category === "Halal";
-                      
-                      let cardBg = "bg-slate-50 border-slate-200 dark:bg-stone-800/40 dark:border-stone-700";
-                      let badgeColor = "text-slate-650 dark:text-slate-400";
-                      
-                      if (isHaram) {
-                        cardBg = "bg-red-50 border-red-100 dark:bg-red-950/20 dark:border-red-900/60";
-                        badgeColor = "text-red-600 dark:text-red-400";
-                      } else if (isDoubtful) {
-                        cardBg = "bg-amber-50 border-amber-100 dark:bg-amber-950/25 dark:border-amber-900/60";
-                        badgeColor = "text-amber-600 dark:text-amber-400";
-                      } else if (isHalal) {
-                        cardBg = "bg-emerald-50 border-emerald-100 dark:bg-emerald-950/10 dark:border-emerald-900/40";
-                        badgeColor = "text-emerald-600 dark:text-emerald-400";
-                      }
-
-                      // Create a symmetric display of the code (e.g. E120 / 120) if it's an additive
-                      let codeDisplay = "";
-                      if (item.code) {
-                        const rawNum = item.code.replace(/^E/, "");
-                        codeDisplay = item.code.startsWith("E") ? `E${rawNum} / ${rawNum}` : `${rawNum} (E${rawNum})`;
-                      }
-
-                      return (
-                        <div key={item.id} className={`text-xs p-2.5 border rounded-lg ${cardBg}`}>
-                          <div className="flex justify-between items-start gap-2">
-                            <div>
-                              <span className="font-bold text-stone-850 dark:text-white">
-                                {item.name} {item.japaneseName ? `(${item.japaneseName})` : ""}
-                              </span>
-                              {codeDisplay && (
-                                <span className="block text-[10px] text-stone-500 dark:text-stone-400 font-semibold mt-0.5 font-mono">
-                                  Additive Ref: {codeDisplay}
-                                </span>
-                              )}
-                            </div>
-                            <span className={`text-[9px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded ${badgeColor} bg-white/70 dark:bg-stone-900/40 border border-current/20 shrink-0`}>
-                              {item.category}
-                            </span>
-                          </div>
-                          {item.description && (
-                            <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1 italic leading-normal">
-                              {item.description}
-                            </p>
-                          )}
-                          <p className="text-[10px] text-stone-700 dark:text-stone-300 mt-1 px-1.5 py-0.5 bg-white/50 dark:bg-black/20 rounded font-medium leading-relaxed">
-                            Status: {item.halalStatus}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Right Column: Scan results container */}
@@ -1440,11 +1159,10 @@ Provide your analysis in clean JSON.
           )}
 
         </div>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+      </div>
+    )}
+  </div>
+</main>
 
       {/* Status Bar Footer matching "Professional Polish" layout */}
       <footer className="h-10 bg-slate-100 border-t border-slate-200 px-4 sm:px-6 flex items-center justify-between text-[10px] text-slate-500 font-medium flex-shrink-0 dark:bg-stone-900 dark:border-stone-800 dark:text-stone-400">
@@ -1600,6 +1318,52 @@ Provide your analysis in clean JSON.
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md transition-colors"
               >
                 Save Settings
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Rating Levels Modal overlay */}
+      {isRatingLevelsOpen && (
+        <div 
+          id="rating-levels-modal"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 shadow-slate-900/40"
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-stone-900 border border-slate-200 dark:border-stone-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
+          >
+            {/* Header */}
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 dark:bg-stone-850 dark:border-stone-800 flex justify-between items-center shrink-0">
+              <div className="flex items-center space-x-2.5">
+                <Layers className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <h3 className="font-extrabold text-base text-slate-800 dark:text-white tracking-tight">
+                  Verification Halal & Rating Levels
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsRatingLevelsOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto space-y-4">
+              <AboutLevels />
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-150 dark:bg-stone-850 dark:border-stone-800 flex justify-end shrink-0">
+              <button
+                onClick={() => setIsRatingLevelsOpen(false)}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-555/10 transition-all cursor-pointer"
+              >
+                Got it
               </button>
             </div>
           </motion.div>
