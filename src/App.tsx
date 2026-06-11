@@ -19,7 +19,11 @@ import {
   Clock,
   Check,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Settings,
+  Key,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { motion } from "motion/react";
 import AboutLevels from "./components/AboutLevels";
@@ -138,6 +142,24 @@ export default function App() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
+
+  // Custom User Gemini API key configurations
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [useCustomKey, setUseCustomKey] = useState<boolean>(() => {
+    return localStorage.getItem("halal_use_custom_key") === "true";
+  });
+  const [customApiKey, setCustomApiKey] = useState<string>(() => {
+    return localStorage.getItem("halal_custom_api_key") || "";
+  });
+  const [showKey, setShowKey] = useState(false);
+
+  const saveSettings = (key: string, enabled: boolean) => {
+    localStorage.setItem("halal_custom_api_key", key.trim());
+    localStorage.setItem("halal_use_custom_key", enabled ? "true" : "false");
+    setCustomApiKey(key.trim());
+    setUseCustomKey(enabled);
+    setIsSettingsOpen(false);
+  };
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -283,6 +305,7 @@ export default function App() {
 
   // Trigger Gemini API Client analysis
   const verifyHalalStatus = async (imageToAnalyze?: string) => {
+    const finalApiKey = useCustomKey && customApiKey.trim() ? customApiKey.trim() : apiKey;
     const imgData = imageToAnalyze || selectedImage;
     if (!imgData) {
       setErrorMsg("Please provide a product image either by camera capture, file upload, or by choosing a demo sample.");
@@ -322,8 +345,8 @@ export default function App() {
 
     try {
       // If we don't have an API Key but selected a demo sample, use the precompiled mock result
-      if (!apiKey) {
-        console.warn("GEMINI_API_KEY is not defined. Using high-fidelity local catalog lookup.");
+      if (!finalApiKey) {
+        console.warn("Gemini API key is not defined. Using local rulebook lookup.");
         setTimeout(() => {
           clearInterval(progressTimer);
           if (analysisSessionRef.current !== currentSession) return;
@@ -348,17 +371,15 @@ export default function App() {
               { name: "Shortening", extractedName: "ショートニング", category: "Syubhat", halalStatus: "Doubtful. Often lard-derived in Japanese pastries." },
               { name: "Soy Sauce", extractedName: "醤油", category: "Syubhat", halalStatus: "Doubtful. Trace alcohol remains unless labeled halal." }
             ],
-            finalRecommendation: "Caution: Sourced shortening is doubtful. Set your GEMINI_API_KEY in the Secrets panel for fully accurate AI live analysis!"
+            finalRecommendation: "Caution: Sourced shortening is doubtful. Please save a custom Gemini API Key in the top Settings panel to unlock full real-time AI analyzer capabilities!"
           });
           setIsAnalyzing(false);
         }, 4000);
         return;
       }
 
-      // Prepare Direct Client-Side Gemini request
-      if (!ai) {
-        ai = new GoogleGenAI({ apiKey: apiKey });
-      }
+      // Prepare Direct Client-Side Gemini request with selected API key
+      const activeAi = new GoogleGenAI({ apiKey: finalApiKey });
 
       // Parse base64 from current image
       let base64Data = imgData;
@@ -440,7 +461,7 @@ Provide your analysis in clean JSON.
         required: ["productName", "halalLevel", "halalLevelExplanation", "extractedIngredientsText", "ingredientsAnalysis", "finalRecommendation"]
       };
 
-      const resultCall = await ai.models.generateContent({
+      const resultCall = await activeAi.models.generateContent({
         model: "gemini-3.5-flash",
         contents: [
           imagePart,
@@ -517,12 +538,26 @@ Provide your analysis in clean JSON.
           </div>
         </div>
         
-        <div className="hidden md:flex items-center space-x-6 text-xs text-slate-500 font-medium dark:text-stone-400">
-          <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-[11px] font-semibold border border-slate-200 flex items-center gap-1.5 dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-            Serverless Client Mode (No Webserver)
-          </span>
-          <span className="flex items-center gap-1 text-slate-400"><Clock className="h-3 w-3" /> {currentTime}</span>
+        <div className="flex items-center space-x-3">
+          <button 
+            id="api-settings-trigger"
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-all dark:bg-stone-850 dark:border-stone-800 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            <Settings className="h-3.5 w-3.5 animate-spin-slow" />
+            <span>API Settings</span>
+            {useCustomKey && customApiKey.trim() && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            )}
+          </button>
+
+          <div className="hidden md:flex items-center space-x-6 text-xs text-slate-500 font-medium dark:text-stone-400">
+            <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-[11px] font-semibold border border-slate-200 flex items-center gap-1.5 dark:bg-stone-800 dark:text-stone-200 dark:border-stone-700">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              Serverless Client Mode (No Webserver)
+            </span>
+            <span className="flex items-center gap-1 text-slate-400"><Clock className="h-3 w-3" /> {currentTime}</span>
+          </div>
         </div>
       </header>
 
@@ -1069,6 +1104,151 @@ Provide your analysis in clean JSON.
           <span>Rules updated: 2026-06-11</span>
         </div>
       </footer>
+
+      {/* Settings Modal overlay */}
+      {isSettingsOpen && (
+        <div 
+          id="api-settings-modal"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-stone-900 border border-slate-200 dark:border-stone-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col"
+          >
+            {/* Header */}
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 dark:bg-stone-850 dark:border-stone-800 flex justify-between items-center">
+              <div className="flex items-center space-x-2.5">
+                <Settings className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <h3 className="font-extrabold text-base text-slate-800 dark:text-white tracking-tight">
+                  Gemini API Configuration
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsSettingsOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4 text-xs leading-relaxed text-slate-600 dark:text-stone-350">
+              <p>
+                To run <strong>HalalVerify PRO</strong> on static servers (like GitHub Pages), you can securely supply your own private Google Gemini API Key directly in this browser frame.
+              </p>
+
+              <div className="p-3.5 bg-sky-50/70 border border-sky-100 rounded-xl dark:bg-sky-950/20 dark:border-sky-900/30">
+                <h4 className="font-bold text-sky-850 dark:text-sky-300 mb-1 flex items-center gap-1.5">
+                  <Info className="h-3.5 w-3.5 shrink-0" /> Is it secure?
+                </h4>
+                <p className="text-[11px] leading-relaxed text-slate-550 dark:text-stone-400">
+                  Yes, fully! Your key is stored strictly on your local browser inside <strong>localStorage</strong>. It connects directly from your browser client to public Google Gemini API endpoints. Absolutely no intermediate database server is set up, and your private key is never transmitted or logged elsewhere.
+                </p>
+              </div>
+
+              {/* Form Option: Use custom key checkbox */}
+              <div className="space-y-3.5 pt-2">
+                <label className="flex items-start gap-2.5 cursor-pointer group">
+                  <input 
+                    type="checkbox"
+                    checked={useCustomKey}
+                    onChange={(e) => setUseCustomKey(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4 dark:border-stone-700 dark:bg-stone-800"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      Enable Personal Gemini API Key
+                    </span>
+                    <p className="text-[11px] text-slate-400 dark:text-stone-450 mt-0.5">
+                      Check this to override default developer credentials.
+                    </p>
+                  </div>
+                </label>
+
+                {/* Text input area for the API key */}
+                {useCustomKey && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 dark:bg-stone-850 dark:border-stone-800"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-700 dark:text-stone-300 flex items-center gap-1">
+                        <Key className="h-3 w-3" /> API Key Value
+                      </span>
+                      <a 
+                        href="https://aistudio.google.com/" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="text-[10px] text-emerald-600 font-bold hover:underline flex items-center gap-1 dark:text-emerald-400"
+                      >
+                        Get Free Key from Google AI Studio <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    </div>
+
+                    <div className="relative">
+                      <input 
+                        type={showKey ? "text" : "password"}
+                        value={customApiKey}
+                        onChange={(e) => setCustomApiKey(e.target.value)}
+                        placeholder="AIzaSy..."
+                        className="w-full pl-3 pr-10 py-2 bg-white border border-slate-200 rounded-lg font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-100"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => setShowKey(!showKey)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                        title={showKey ? "Hide key" : "Show key"}
+                      >
+                        {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Status information */}
+              <div className="pt-2.5 border-t border-slate-100 dark:border-stone-800 flex justify-between items-center text-[10px] text-slate-400 dark:text-stone-450 font-semibold uppercase tracking-wider">
+                <span>Active Credentials Mode:</span>
+                <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                  useCustomKey && customApiKey.trim()
+                    ? "bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-900/30"
+                    : apiKey
+                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400"
+                    : "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400"
+                }`}>
+                  {useCustomKey && customApiKey.trim() ? "Personal Key (Client-side)" : apiKey ? "Developer Key (Vite Env)" : "Offline Catalog Fallback"}
+                </span>
+              </div>
+            </div>
+
+            {/* Footer actions */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 dark:bg-stone-850 dark:border-stone-800 flex justify-end space-x-3">
+              <button 
+                type="button"
+                onClick={() => {
+                  setCustomApiKey(localStorage.getItem("halal_custom_api_key") || "");
+                  setUseCustomKey(localStorage.getItem("halal_use_custom_key") === "true");
+                  setIsSettingsOpen(false);
+                }}
+                className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-755 border border-slate-300 rounded-xl font-bold text-xs transition-colors dark:bg-stone-800 dark:border-stone-750 dark:text-stone-300 dark:hover:bg-stone-750"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  saveSettings(customApiKey, useCustomKey);
+                }}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-md transition-colors"
+              >
+                Save Settings
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
