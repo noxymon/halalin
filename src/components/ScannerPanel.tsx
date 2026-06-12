@@ -1,5 +1,5 @@
 import React from "react";
-import { Camera, Upload, X, Sparkles } from "lucide-react";
+import { Camera, Upload, X } from "lucide-react";
 import { UploadedItem, DemoSample } from "../types";
 import { DEMO_SAMPLES } from "../data/samples";
 
@@ -165,14 +165,6 @@ export default function ScannerPanel({
               </span>
               
               <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => verifyHalalStatusBatch(uploadedImages)}
-                  className="text-[10px] font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-900/60 transition-all cursor-pointer inline-flex items-center gap-1.5"
-                  title="Analyze this entire batch in a single consolidated Gemini call"
-                >
-                  <Sparkles className="h-2.5 w-2.5" />
-                  Optimize & Scan All
-                </button>
                 <button 
                   onClick={clearAllUploadedImages}
                   className="text-[10px] font-bold text-red-500 hover:text-red-700 hover:underline dark:text-red-400 dark:hover:text-red-350 transition-all cursor-pointer"
