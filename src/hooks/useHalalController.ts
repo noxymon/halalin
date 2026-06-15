@@ -114,7 +114,19 @@ export default function useHalalController() {
           }
         } catch (err: any) {
           console.error("Camera access failed:", err);
-          setGeneralError("Could not request access to device camera. Check layout permissions in metadata.");
+          const isAndroidApp = typeof window !== "undefined" && (
+            !!(window as any).Capacitor || 
+            window.location.search.includes("platform=native") ||
+            (typeof navigator !== "undefined" && navigator.userAgent.toLowerCase().includes("android"))
+          );
+          
+          let alertMsg = "Could not request access to device camera.";
+          if (isAndroidApp) {
+            alertMsg += " On Android, please ensure you have granted Camera permission to the Halal Product Verifier app in your Android System Settings (Settings -> Apps -> Halal Product Verifier -> Permissions).";
+          } else {
+            alertMsg += " Please verify that you have given this site permission to access your camera in your browser's address bar.";
+          }
+          setGeneralError(alertMsg);
           setIsCameraActive(false);
         }
       } else {

@@ -51,6 +51,17 @@ jobs:
           if [ ! -d "android" ]; then
             npx cap add android
           fi
+          
+          # Inject Camera Permissions into AndroidManifest.xml if they aren't already there
+          MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_FILE" ]; then
+            if ! grep -q "android.permission.CAMERA" "$MANIFEST_FILE"; then
+              echo "Injecting Android camera permissions..."
+              # Use sed to add permission elements right before the <application tag
+              sed -i 's|<application|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <application|' "$MANIFEST_FILE"
+            fi
+          fi
+
           # Sync our production web builds into the Android native container assets.
           npx cap sync android
 
