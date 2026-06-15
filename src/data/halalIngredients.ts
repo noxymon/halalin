@@ -550,6 +550,470 @@ export interface CertifiedCompany {
 
 export const JHA_CERTIFIED_COMPANIES: CertifiedCompany[] = [
   {
+    id: "jha-agapefarm",
+    companyName: "AGAPEFARM CO., LTD",
+    japaneseCompanyName: "有限会社アガペファーム",
+    certifiedProducts: [
+      "SoyLact (Plain) 100ml",
+      "SoyLact (Amaou) 100ml",
+      "SoyLact (Yame Matcha) 100ml",
+      "SoyLact (Sugar Free) 100ml",
+      "SoyLact (Black) 100ml",
+      "SoyLact (Black Sugar Free) 100ml",
+      "Ginger Syrup \"Kinkyokan\" 300ml",
+      "Soy Milk 900ml",
+      "Black Soybean Milk",
+      "Soy Milk 250ml / 900ml",
+      "High Oleic Acid Soy Milk 900ml",
+      "High Oleic Acid Soy Milk 250ml"
+    ],
+    category: "Soy Milk / Beverages"
+  },
+  {
+    id: "jha-igagoe",
+    companyName: "Igagoe Co., Ltd.",
+    japaneseCompanyName: "イガゴエ株式会社",
+    certifiedProducts: [
+      "HALAL ALCOHOL ZERO SOY SAUCE",
+      "HALAL NATURALLY BREWED SOY SAUCE"
+    ],
+    category: "Seasoning / Soy Sauce"
+  },
+  {
+    id: "jha-nmsalt",
+    companyName: "NM SALT corporation",
+    japaneseCompanyName: "株式会社NMソルト",
+    certifiedProducts: [
+      "Arabiki Solar Salt",
+      "Sauna Salt",
+      "Jukusei Solar Salt",
+      "Purified Solar Salt",
+      "Purified Solar Salt (1mm/4mm)",
+      "Purified Solar Salt (1mm size)",
+      "Purified Solar Salt 30",
+      "Purified Solar Salt 403",
+      "Purified Solar Salt D",
+      "Purified Solar Salt D500-150",
+      "Purified Solar Salt D425",
+      "Purified Solar Salt D502",
+      "Purified Solar Salt DT425",
+      "Purified Solar Salt F",
+      "Ground Solar Salt 50",
+      "Ground Solar Salt 70",
+      "Ground Solar Salt 50 (1mm CUT)",
+      "Ground Solar Salt 50 (2mm CUT)",
+      "Ground Solar Salt 503"
+    ],
+    category: "Salt"
+  },
+  {
+    id: "jha-kanoya",
+    companyName: "KANOYA CO., LTD",
+    japaneseCompanyName: "カノヤ食品株式会社",
+    certifiedProducts: [
+      "Frozen Udon Noodle #9 250g",
+      "Frozen Nippon Soba #20 200g",
+      "Frozen (Tea-buckwheat) Soba #20 180g",
+      "Frozen Ramen Noodle #20 200g",
+      "Frozen Champon noodles #14 200g"
+    ],
+    category: "Noodles / Frozen Food"
+  },
+  {
+    id: "jha-kurita",
+    companyName: "KURITA CHEMICAL MANUFACTURING LTD.",
+    japaneseCompanyName: "栗田化学工業株式会社",
+    certifiedProducts: [
+      "Boiler water treatment chemicals 『KURITIGHT Series』",
+      "Corrosion inhibitor for building water supply 『MIZUKURIN Series』"
+    ],
+    category: "Water Treatment"
+  },
+  {
+    id: "jha-chlorella",
+    companyName: "Chlorella Industry Co., Ltd.",
+    japaneseCompanyName: "クロレラ工業株式会社",
+    certifiedProducts: [
+      "Chlorella powder (food)",
+      "Chlorella micro powder (food)",
+      "Chlorella tablet (food)",
+      "Chlorella calcium powder (food)",
+      "Fresh chlorella-V12 (marine feed)",
+      "Super fresh chlorella-V12 (marine feed)"
+    ],
+    category: "Supplements / Health Food"
+  },
+  {
+    id: "jha-kenpria",
+    companyName: "KENPRIA Co., Ltd.",
+    japaneseCompanyName: "ケンプリア株式会社",
+    certifiedProducts: [
+      "ORGANIC YOUNG BARLEY GRASS JUICE POWDER",
+      "ORGANIC GREEN MAGMA",
+      "ORGANIC BARLEYGREEN PREMIUM",
+      "ORGANIC BARLEYGREEN PREMIUM NO KELP",
+      "ORGANIC BARLEYGREEN Sauda"
+    ],
+    category: "Supplements / Health Food"
+  },
+  {
+    id: "jha-kohjin",
+    companyName: "Kohjin Life Sciences Co., Ltd.",
+    japaneseCompanyName: "興人ライフサイエンス株式会社",
+    certifiedProducts: [
+      "AROMILD",
+      "AROMILD U",
+      "AROMILD U-15",
+      "AJIREX",
+      "AJIREX NH",
+      "AJITOP",
+      "Nucleamin",
+      "Glutathion",
+      "HITHION YH-D18",
+      "AROMAWAY",
+      "Yeast Extract GL-30",
+      "ABLOOM EYP",
+      "Yeast Extract GLY",
+      "Yeast Extract NT"
+    ],
+    category: "Yeast Extract / Food Ingredients"
+  },
+  {
+    id: "jha-kobayashi",
+    companyName: "KOBAYASHI FOODS Co., Ltd.",
+    japaneseCompanyName: "小林食品株式会社",
+    certifiedProducts: [
+      "Fish Flakes",
+      "Fish Fragments",
+      "Fish Powder",
+      "Shrimp Powder"
+    ],
+    category: "Processed Fish / Seasoning"
+  },
+  {
+    id: "jha-koyama",
+    companyName: "Koyama Oil and Fats Ind. Co., Ltd.",
+    japaneseCompanyName: "小山油脂株式会社",
+    certifiedProducts: [
+      "HD-2 series"
+    ],
+    category: "Oils / Fats"
+  },
+  {
+    id: "jha-saraya",
+    companyName: "Saraya Co., Ltd.",
+    japaneseCompanyName: "サラヤ株式会社",
+    certifiedProducts: [
+      "Lakanto Classic 3g x 60 pieces",
+      "Lakanto Classic 3g x 85 pieces"
+    ],
+    category: "Sweeteners / Sugar Substitutes"
+  },
+  {
+    id: "jha-susonity",
+    companyName: "SUSONITY Japan G.K.",
+    japaneseCompanyName: "スソニティ・ジャパン合同会社",
+    certifiedProducts: [
+      "Colorona® Blackstar series",
+      "RonaFlair® series (part)",
+      "Ronastar® series (part)"
+    ],
+    category: "Cosmetics / Ingredients"
+  },
+  {
+    id: "jha-taiyo",
+    companyName: "Taiyo Flour Milling Co., Ltd.",
+    japaneseCompanyName: "太陽製粉株式会社",
+    certifiedProducts: [
+      "Wheat flour",
+      "Rye flour",
+      "Wheat bran",
+      "Rye bran"
+    ],
+    category: "Flour / Grains"
+  },
+  {
+    id: "jha-tsushima",
+    companyName: "TSUSHIMA SUISAN CO., LTD",
+    japaneseCompanyName: "対馬水産株式会社",
+    certifiedProducts: [
+      "FROZEN FISHES",
+      "FROZEN MOLLUSK"
+    ],
+    category: "Seafood / Frozen Food"
+  },
+  {
+    id: "jha-mitsui",
+    companyName: "MITSUI DM SUGAR CO., LTD.",
+    japaneseCompanyName: "三井製糖株式会社 / 三井DMシュガー",
+    certifiedProducts: [
+      "White soft sugar (Fukuoka Factory)",
+      "Brown soft sugar (Fukuoka Factory)",
+      "Granulated sugar (Fukuoka Factory)",
+      "White crystal sugar (Fukuoka Factory)",
+      "Light brown crystal sugar (Fukuoka Factory)",
+      "Liquid sugar (Fukuoka Factory)"
+    ],
+    category: "Sugar / Sweeteners"
+  },
+  {
+    id: "jha-nakayama",
+    companyName: "Nakayama Kichishoen Co., Ltd.",
+    japaneseCompanyName: "株式会社中山吉祥園",
+    certifiedProducts: [
+      "Green Tea",
+      "Matcha"
+    ],
+    category: "Japanese Tea"
+  },
+  {
+    id: "jha-nishiawa",
+    companyName: "NISHIAWA BEEF LTD.",
+    japaneseCompanyName: "株式会社にしあわビーフ",
+    certifiedProducts: [
+      "BEEF (Except Saudi export)"
+    ],
+    category: "Meat / Beef"
+  },
+  {
+    id: "jha-nishio",
+    companyName: "Nishio Flour Milling Co., Ltd.",
+    japaneseCompanyName: "西尾製粉株式会社",
+    certifiedProducts: [
+      "Wheat Flour",
+      "Soya bean Flour",
+      "Premix Powder"
+    ],
+    category: "Flour / Powder"
+  },
+  {
+    id: "jha-nitto",
+    companyName: "NITTO FUNKA KOGYO K.K.",
+    japaneseCompanyName: "日東粉化工業株式会社",
+    certifiedProducts: [
+      "MAMACALSO",
+      "TOKKYU-MAMACALSO",
+      "CHINTAN (Only paper bags in Japan)"
+    ],
+    category: "Calcium / Food Additives"
+  },
+  {
+    id: "jha-nihonkaisui",
+    companyName: "Nihonkaisui Co., Ltd.",
+    japaneseCompanyName: "株式会社日本海水",
+    certifiedProducts: [
+      "SALT",
+      "PROCESSED SALT",
+      "BITTERN",
+      "PROCESSED BITTERN",
+      "POTASSIUM CHLORIDE",
+      "PROCESSED WATER"
+    ],
+    category: "Salt / Bittern"
+  },
+  {
+    id: "jha-nippontalc",
+    companyName: "NIPPON TALC CO., LTD.",
+    japaneseCompanyName: "日本タルク株式会社",
+    certifiedProducts: [
+      "TALC MS (Food Additives)",
+      "TALC MS-F",
+      "MICRO ACE P-2",
+      "MICRO ACE P-3",
+      "MICRO ACE P-4",
+      "MICRO ACE P-6",
+      "MICRO ACE P-8",
+      "MICRO ACE K-1",
+      "MICRO ACE K-3",
+      "MICRO ACE L-1",
+      "MICRO ACE C-31",
+      "MICRO ACE PC-25",
+      "MICRO ACE JSC-5",
+      "MICRO ACE PAOG-2",
+      "MICRO ACE PAOG-3",
+      "SG-95",
+      "RA-3",
+      "BST",
+      "ROSE TALC",
+      "ROSE K",
+      "RA",
+      "PA-OG",
+      "SIMUGON",
+      "TALC SWK",
+      "TALC SW",
+      "TALC MS (20)",
+      "TALC MS (22)",
+      "TALC MS (62)",
+      "X-50",
+      "TALC MS-KY",
+      "MICRO ACE K-1B",
+      "LT-5",
+      "LTC",
+      "GATH40",
+      "GAHC",
+      "C-R1",
+      "PAOG-R",
+      "LU-R"
+    ],
+    category: "Talc / Food Additives"
+  },
+  {
+    id: "jha-hakubaku",
+    companyName: "Hakubaku Co., Ltd.",
+    japaneseCompanyName: "株式会社はくばく",
+    certifiedProducts: [
+      "Baby Somen"
+    ],
+    category: "Noodles / Baby Food"
+  },
+  {
+    id: "jha-hikarimiso-factory",
+    companyName: "HIKARI MISO IIJIMA GREEN FACTORY CO., Ltd.",
+    japaneseCompanyName: "ひかり味噌株式会社 飯島グリーンファクトリー",
+    certifiedProducts: [
+      "HIKARI SHIROKOSHI S",
+      "HIKARI AKAKOSHI S",
+      "MUTENKA INAKA MISO",
+      "INSTANT MISO SOUP",
+      "SOKUNAMA MISO SOUP WAKAME"
+    ],
+    category: "Miso Paste / Instant Soup"
+  },
+  {
+    id: "jha-bihoku",
+    companyName: "BIHOKU FUNKA KOGYO CO., LTD.",
+    japaneseCompanyName: "備北粉化工業株式会社",
+    certifiedProducts: [
+      "Food Additives Calcium Carbonate CALMIGEN",
+      "Precipitated Calcium Carbonate (Japanese Pharmacopoeia)"
+    ],
+    category: "Calcium / Food Additives"
+  },
+  {
+    id: "jha-fukushima",
+    companyName: "Fukushima Katsuo Co., Ltd.",
+    japaneseCompanyName: "福島鰹株式会社",
+    certifiedProducts: [
+      "SHREDDED DRIED BONITO (DRIED SHAVED BONITO)",
+      "SHREDDED DRIED TUNA (DRIED SHAVED TUNA)",
+      "SHREDDED DRIED MACKEREL (DRIED SHAVED MACKEREL)",
+      "SHREDDED DRIED SARDINE (DRIED SHAVED SARDINE)",
+      "SHREDDED DRIED BONITO (SODA)",
+      "SHREDDED DRIED FLYING FISH",
+      "DRIED KELP",
+      "SHREDDED DRIED SPANISH MACKEREL",
+      "SHREDDED DRIED FISH MIXTURE"
+    ],
+    category: "Dashi / Shaved Fish Flakes"
+  },
+  {
+    id: "jha-fuji",
+    companyName: "Fuji Chemical Industries Co., Ltd.",
+    japaneseCompanyName: "富士化学工業株式会社",
+    certifiedProducts: [
+      "AstaReal Oil 50FC",
+      "AstaReal Oil 200SS",
+      "AstaReal P2AF",
+      "AstaReal Oil 50F intermediate",
+      "AstaReal Oil 50F",
+      "AstaReal Oil 5F",
+      "AstaReal P25HB",
+      "AstaReal CWS25",
+      "AstaReal P4AF",
+      "AstaReal P2AF-G",
+      "AstaReal CWS25-G",
+      "AstaReal Oil 200AS",
+      "AstaTROL X",
+      "AstaTROL Hp",
+      "ASTAEQUUS 2.5"
+    ],
+    category: "Chemicals / Ingredients"
+  },
+  {
+    id: "jha-fundokin",
+    companyName: "FUNDOKIN SHOYU CO., LTD.",
+    japaneseCompanyName: "フンドーキン醤油株式会社",
+    certifiedProducts: [
+      "Special Grade Soy Sauce Halal",
+      "Sweet Sashimi Soy Sauce Halal",
+      "Halal Barley Miso"
+    ],
+    category: "Seasoning / Soy Sauce"
+  },
+  {
+    id: "jha-fundodai",
+    companyName: "FUNDODAI, Inc.",
+    japaneseCompanyName: "株式会社フンドーダイ",
+    certifiedProducts: [
+      "A Clear soy sauce",
+      "A Yakitori sauce",
+      "EX Ginjo soy sauce",
+      "EX Low salt soy sauce",
+      "EX Brewed sweet soy sauce",
+      "EX Miso",
+      "EX Mixed miso"
+    ],
+    category: "Seasoning / Soy Sauce"
+  },
+  {
+    id: "jha-masuda",
+    companyName: "MASUDA FLOUR MILLING CO., LTD",
+    japaneseCompanyName: "増田製粉所株式会社",
+    certifiedProducts: [
+      "WHEAT FLOUR",
+      "BRAN"
+    ],
+    category: "Flour / Grains"
+  },
+  {
+    id: "jha-meiji",
+    companyName: "Meiji Co., Ltd.",
+    japaneseCompanyName: "株式会社明治",
+    certifiedProducts: [
+      "skim milk powder",
+      "butter"
+    ],
+    category: "Dairy / Milk Products"
+  },
+  {
+    id: "jha-yakult",
+    companyName: "Yakult Health Foods Co., Ltd",
+    japaneseCompanyName: "ヤクルトヘルスフーズ株式会社",
+    certifiedProducts: [
+      "Green Kale"
+    ],
+    category: "Supplements / Health Food"
+  },
+  {
+    id: "jha-megmilk",
+    companyName: "Megmilk Snow Brand Co., Ltd.",
+    japaneseCompanyName: "雪印メグミルク株式会社",
+    certifiedProducts: [
+      "Butter",
+      "Skim Milk Powder"
+    ],
+    category: "Dairy / Milk Products"
+  },
+  {
+    id: "jha-yotsuba",
+    companyName: "Yotsuba Milk Products Co., Ltd.",
+    japaneseCompanyName: "よつ葉乳業株式会社",
+    certifiedProducts: [
+      "Milk",
+      "Milk Drinks",
+      "Skim Milk Powder",
+      "Whole Milk Powder",
+      "Evaporated Milk",
+      "Evaporated Skimmed Milk",
+      "Butter",
+      "Cream",
+      "Cheddar Cheese",
+      "Gouda Cheese",
+      "Butter Milk Powder"
+    ],
+    category: "Dairy / Milk Products"
+  },
+  {
     id: "jha1",
     companyName: "Kikkoman Corporation",
     japaneseCompanyName: "キッコーマン株式会社",
@@ -612,17 +1076,7 @@ export const JHA_CERTIFIED_COMPANIES: CertifiedCompany[] = [
       "Halal Gyoza (Chicken & Vegetable)",
       "Halal Salad Dressings"
     ],
-    category: "Cooking Wine / Soy Sauce / Frozen Gyoza"
-  },
-  {
-    id: "jha7",
-    companyName: "Hikari Miso Co., Ltd.",
-    japaneseCompanyName: "ひかり味噌株式会社",
-    certifiedProducts: [
-      "Organic Miso Paste (additive-free)",
-      "Halal Certified Instant Miso Soup series"
-    ],
-    category: "Miso Paste / Instant Soup"
+    category: "Cooking Wine / Soy Sauce"
   },
   {
     id: "jha8",

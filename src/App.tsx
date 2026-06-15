@@ -370,6 +370,20 @@ export default function App() {
                 
                 /* 📱 PANEL 2: HOME SCENE DIRECTORY AND SCREENS */
                 <div className="flex flex-col flex-1 h-full min-h-0 relative">
+                  
+                  {/* 📱 Mobile App Header Styled Container */}
+                  <div className="bg-white dark:bg-stone-900 border-b border-slate-100 dark:border-stone-800/80 px-4 py-3 shrink-0 select-none flex items-center justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)] z-10">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 bg-emerald-600/10 dark:bg-emerald-500/20 rounded-lg flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                        <ShieldCheck className="h-4.5 w-4.5 shrink-0" />
+                      </div>
+                      <div>
+                        <h1 className="font-extrabold text-[12px] text-stone-900 dark:text-white leading-tight tracking-tight uppercase">Halal Product Verifier</h1>
+                        <p className="text-[8px] text-emerald-600 dark:text-emerald-400 font-bold leading-none tracking-wider font-mono">JAPAN INDEX</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex-1 overflow-y-auto min-h-0 pb-16">
                   
                   {/* TAB 1: SCANNER */}
@@ -384,16 +398,27 @@ export default function App() {
                       )}
 
                       {isCameraActive ? (
-                        <div className="relative w-full flex-1 min-h-[220px] bg-black rounded-xl overflow-hidden flex items-center justify-center">
+                        <div className="relative w-full flex-1 min-h-[352px] bg-black rounded-xl overflow-hidden flex items-center justify-center">
                           <video ref={videoRef} playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
                           <div className="absolute top-2 left-2 bg-black/60 text-[7.5px] px-1.5 font-bold text-emerald-400 uppercase rounded">Live stream lens</div>
-                          <div className="absolute bottom-2 inset-x-2 flex justify-between">
-                            <button onClick={stopCamera} className="p-1 bg-black/50 text-white rounded cursor-pointer text-[9px]">Close</button>
-                            <button onClick={capturePhoto} className="px-3 py-1 bg-emerald-600 text-white font-bold text-[9px] rounded cursor-pointer">Snap Photo</button>
+                          <div className="absolute bottom-4 inset-x-4 flex items-center justify-between">
+                            <button 
+                              onClick={stopCamera} 
+                              className="px-3.5 py-2 bg-neutral-900/60 hover:bg-neutral-900/85 backdrop-blur-sm text-white font-black rounded-full cursor-pointer text-[10px] uppercase tracking-wider transition-all duration-200"
+                            >
+                              Close
+                            </button>
+                            <button 
+                              onClick={capturePhoto} 
+                              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[12px] uppercase tracking-wider rounded-full shadow-lg shadow-emerald-600/35 active:scale-95 transition-all duration-200 flex items-center gap-2 cursor-pointer border border-emerald-400/20"
+                            >
+                              <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
+                              <span>Snap Photo</span>
+                            </button>
                           </div>
                         </div>
                       ) : (
-                        <div className="w-full flex-1 py-6 px-4 bg-white border border-slate-200/80 dark:bg-stone-900 rounded-2xl text-center space-y-4 flex flex-col justify-center items-center shadow-[0_4px_18px_rgba(0,0,0,0.02)] transition-all duration-300 hover:shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
+                        <div className="w-full flex-1 min-h-[352px] py-8 px-4 bg-white border border-slate-200/80 dark:bg-stone-900 rounded-2xl text-center space-y-4 flex flex-col justify-center items-center shadow-[0_4px_18px_rgba(0,0,0,0.02)] transition-all duration-300 hover:shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
                           <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                             <Camera className="h-6 w-6" />
                           </div>
